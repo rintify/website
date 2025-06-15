@@ -1,4 +1,5 @@
 // app/layout.tsx
+import Header from "@/components/Header";
 import Providers from "./providers";
 
 export const metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <Providers>
+          <Header/>
           {children}
         </Providers>
       </body>

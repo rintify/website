@@ -27,10 +27,41 @@ export const authOptions: NextAuthOptions = {
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) return null;
 
-        return { id: user.id.toString(), name: user.name };
+        return {
+          id:         user.id,
+          name:       user.name,
+          nickName:   user.nickName,
+          createdAt:  user.createdAt.toISOString(),
+          updatedAt:  user.updatedAt.toISOString(),
+        };
       },
     }),
-  ]
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        Object.assign(token, {
+          id:         user.id,
+          name:       user.name,
+          nickName:   user.nickName,
+          createdAt:  user.createdAt,
+          updatedAt:  user.updatedAt,
+        });
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (!token.name) throw new Error("セッションに user.name がありません");
+      session.user = {
+        id:         token.id,
+        name:       token.name as string,
+        nickName:   token.nickName,
+        createdAt:  token.createdAt,
+        updatedAt:  token.updatedAt,
+      };
+      return session;
+    },
+  },
 };
 
 const handler = NextAuth(authOptions);

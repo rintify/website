@@ -1,17 +1,20 @@
 // app/page.tsx
 "use client";
+import './globals.css';
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import AuthModal from "@/components/AuthModal";
 import Button from "@/components/ui/Button";
+import { useUser } from '@/hooks/useUser';
+
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const user = useUser();
   const [open, setOpen] = useState(false);
 
   const handleButtonClick = () => {
-    if (status === "authenticated") {
+    if (!user) {
       signOut({ redirect: false }).then(() => window.location.reload());
     } else {
       setOpen(true);
@@ -22,9 +25,52 @@ export default function HomePage() {
     <div>
       <h1>hello world</h1>
       <Button onClick={handleButtonClick}>
-        {status === "authenticated" ? session.user?.name : "Sign In"}
+        {user ? user.nickName : "Sign In"}
       </Button>
-
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
+      a<br/>
       <AuthModal open={open} onClose={() => setOpen(false)} />
     </div>
   );

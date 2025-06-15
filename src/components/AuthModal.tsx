@@ -7,8 +7,6 @@ import Dialog from "./ui/Dialog";
 import Box from "./ui/Box";
 import Button from "./ui/Button";
 import Textarea from "./ui/Textarea";
-import { Editor } from "slate";
-import SlateEditor from "./ui/Editor";
 
 
 type Props = {
