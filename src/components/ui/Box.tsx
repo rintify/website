@@ -14,15 +14,14 @@ export default function Box({
   style = {},
   ...rest
 }: BoxProps) {
-  // direction が指定されていれば flex コンテナに
-  const flexStyles: React.CSSProperties = {
-    display: "flex",
-    flexDirection: row ? 'row' : 'column',
-    gap: '0.5rem',
-  }
 
   return (
-    <div {...rest} style={{ ...flexStyles, ...style }}>
+    <div {...rest} style={{
+      display: "flex",
+      flexDirection: row ? 'row' : 'column',
+      gap: '0.5rem',
+       ...style
+    }}>
       {children}
     </div>
   );

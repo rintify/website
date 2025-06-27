@@ -19,9 +19,9 @@ export default function Button({
     transform: pressed
       ? "scale(0.9)"
       : hovered
-      ? "scale(1.1)"
+      ? "scale(1.05)"
       : "scale(1)",
-    config: { tension: 300, friction: 20 },
+    config: {tension: 300, friction: 10 },
   });
 
   return (

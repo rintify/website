@@ -7,17 +7,20 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import AuthModal from "@/components/AuthModal";
 import Button from "@/components/ui/Button";
 import { useUser } from '@/hooks/useUser';
+import { useModal } from '@/hooks/ModalContext';
 
 
 export default function HomePage() {
   const user = useUser();
-  const [open, setOpen] = useState(false);
+  const {pushModal} = useModal()
 
   const handleButtonClick = () => {
+    pushModal(() => <AuthModal/>)
+    return
     if (!user) {
       signOut({ redirect: false }).then(() => window.location.reload());
     } else {
-      setOpen(true);
+      
     }
   };
 
@@ -29,49 +32,7 @@ export default function HomePage() {
       </Button>
       a<br/>
       a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      a<br/>
-      <AuthModal open={open} onClose={() => setOpen(false)} />
+      
     </div>
   );
 }

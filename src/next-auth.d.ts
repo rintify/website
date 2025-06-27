@@ -8,7 +8,8 @@ type SessionUser = Record<"id"
   | "name"
   | "nickName"
   | "createdAt"
-  | "updatedAt",string>
+  | "updatedAt"
+  | "icon",string>
 
 declare module "next-auth" {
   interface Session {

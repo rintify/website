@@ -1,6 +1,7 @@
 // app/layout.tsx
 import Header from "@/components/Header";
 import Providers from "./providers";
+import { ModalProvider } from "@/hooks/ModalContext";
 
 export const metadata = {
   title: 'Hello World',
@@ -16,8 +17,10 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <Providers>
-          <Header/>
-          {children}
+          <ModalProvider>
+            <Header/>
+                    {children}
+          </ModalProvider>
         </Providers>
       </body>
     </html>

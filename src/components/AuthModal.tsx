@@ -3,18 +3,13 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import Dialog from "./ui/Dialog";
 import Box from "./ui/Box";
 import Button from "./ui/Button";
 import Textarea from "./ui/Textarea";
 
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
 
-export default function AuthModal({ open, onClose }: Props) {
+export default function AuthModal() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [comment, setComment] = useState("");
@@ -57,7 +52,6 @@ export default function AuthModal({ open, onClose }: Props) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
       <Box>
         <h2>ログイン / サインアップ</h2>
         {error && <Box style={{ color: "red", marginTop: 8 }}>{error}</Box>}
@@ -69,11 +63,7 @@ export default function AuthModal({ open, onClose }: Props) {
 
         <Box row style={{flexDirection: 'row'}}>
           <Button onClick={handleSubmit}>送信</Button>
-          <Button onClick={onClose}>
-            キャンセル
-          </Button>
         </Box>
       </Box>
-    </Dialog>
   );
 }

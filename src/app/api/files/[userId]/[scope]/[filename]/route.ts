@@ -1,27 +1,59 @@
-// pages/api/files/[userId]/[filename].ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+// app/api/files/[userId]/[scope]/[filename]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { safeUploadsPath, requireAuth } from '@/lib/nextauth-server';
+import { promises as fsPromises, createReadStream } from 'fs';
 import mime from 'mime-types';
-import { requireAuth } from '@/lib/nextauth-server';
-import fs from 'fs';
-import path from 'path';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { userId, scope, filename } = req.query as { userId: string; scope: string; filename: string };
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { userId: string; scope: string; filename: string } }
+) {
+  const { userId, scope, filename } = params;
 
-  if (scope != 'public') {
-    const user = await requireAuth(req, res);
-    if (!user || user.id !== userId) return res.status(403).end('Forbidden');
+  if (scope === 'private') {
+    const user = await requireAuth();
+    if (!user || user.id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
-  const baseDir = path.join(process.cwd(), 'uploads');
-  let filepath = path.join(baseDir, userId, scope, filename);
-  filepath = path.normalize(filepath);
+  const filepath = safeUploadsPath(userId, scope, filename);
+  if (!filepath) {
+    return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
+  }
 
-  if (!filepath.startsWith(baseDir + path.sep)) 
-    return res.status(400).end('Invalid file path');
+  const stat = await fsPromises.stat(filepath);
+  const size = stat.size;
+  const contentType = mime.lookup(filepath) || 'application/octet-stream';
 
-  if (!fs.existsSync(filepath)) return res.status(404).end('Not Found');
+  const INLINE_THRESHOLD = 512 * 1024; // 512 KB
+  if (size < INLINE_THRESHOLD) {
+    const data = await fsPromises.readFile(filepath);
+    return new NextResponse(data, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': size.toString(),
+      },
+    });
+  }
 
-  res.setHeader('Content-Type', mime.lookup(filepath) || 'application/octet-stream');
-  fs.createReadStream(filepath).pipe(res);
+  const nodeStream = createReadStream(filepath);
+  const webStream = nodeToWeb(nodeStream);
+  return new NextResponse(webStream, {
+    status: 200,
+    headers: {
+      'Content-Type': contentType,
+    },
+  });
+}
+
+function nodeToWeb(nodeStream: NodeJS.ReadableStream): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      nodeStream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
+      nodeStream.on('end', () => controller.close());
+      nodeStream.on('error', err => controller.error(err));
+    }
+  });
 }
