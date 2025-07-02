@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
-const userNameRegex = /^[0-9a-z_]{3,20}$/;
+const userNameRegex = /^[0-9a-z_]{3,10}$/;
 const passwordRegex = /^[\x21-\x7E]{8,32}$/;
 
 export async function POST(req: Request) {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!userNameRegex.test(name)) {
     return NextResponse.json(
       { 
-        error: "ユーザー名は3〜20文字の半角英数字とアンダースコア（_）のみ使用できます" 
+        error: "ユーザー名は3〜10文字の半角英数字とアンダーバーのみ使用できます" 
       },
       { status: 400 }
     );
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, passwordHash, comment },
+    data: { name, passwordHash, comment, nickName: name },
   });
   return NextResponse.json({ id: user.id, name: user.name });
 }

@@ -68,7 +68,8 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        pointerEvents: modals.length > 0 ? 'auto' : 'none'
+                        pointerEvents: modals.length > 0 ? 'auto' : 'none',
+                        zIndex: 10000
                     }}
                 >
                     <animated.div
@@ -77,7 +78,9 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                             position: "absolute",
                             width: "100%",
                             height: "100%",
-                            background: "#0001",
+                            background: "#0000",
+                            backdropFilter: "blur(1px)",
+                            WebkitBackdropFilter: "blur(1px)",
                             opacity: styles.opacity,
                             pointerEvents: modals[modals.length - 1]?.key === item.key ? 'auto' : 'none'
                         }}
@@ -88,7 +91,7 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
                             position: "relative",
                             background: "#fff",
                             borderRadius: 4,
-                            padding: "1rem",
+                            padding: "1.5rem",
                             boxShadow: "0 0 10px rgba(0,0,0,0.2)",
                             transform: styles.transform,
                             opacity: styles.opacity,

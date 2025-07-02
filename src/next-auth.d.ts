@@ -9,15 +9,16 @@ type SessionUser = Record<"id"
   | "nickName"
   | "createdAt"
   | "updatedAt"
-  | "icon",string>
+  | "icon"
+  | "comment", string>
 
 declare module "next-auth" {
   interface Session {
     user: SessionUser;
   }
-  interface User extends SessionUser, DefaultUser {}
+  interface User extends SessionUser, DefaultUser { }
 }
 
 declare module "next-auth/jwt" {
-  interface JWT extends SessionUser, DefaultJWT {}
+  interface JWT extends SessionUser, DefaultJWT { }
 }

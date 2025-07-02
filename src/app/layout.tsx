@@ -1,28 +1,30 @@
 // app/layout.tsx
-import Header from "@/components/Header";
-import Providers from "./providers";
-import { ModalProvider } from "@/hooks/ModalContext";
+import './globals.css'
+import Header from '@/components/Header'
+import Providers from './providers'
+import { ModalProvider } from '@/hooks/ModalContext'
+import { LayoutTransition } from '@/components/PageTransition'
+import { ReactElement } from 'react'
 
 export const metadata = {
   title: 'Hello World',
   description: 'Minimal Next.js 15 + TypeScript demo',
-};
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactElement }) {
   return (
-    <html lang="ja">
-      <body>
+    <html lang='ja'>
+      <body style={{ margin: 0, padding: 0 }}>
         <Providers>
           <ModalProvider>
-            <Header/>
-                    {children}
+            <LayoutTransition
+            >
+              {children}
+            </LayoutTransition>
+            <Header />
           </ModalProvider>
         </Providers>
       </body>
     </html>
-  );
+  )
 }

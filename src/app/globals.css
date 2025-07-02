@@ -1,6 +1,21 @@
+@font-face {
+  font-family: 'MPLUS1p';
+  src: url('/MPLUS1p-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+*{
+  margin: 0;
+  font-family: 'MPLUS1p', sans-serif;
+  line-height: 1.2;
+}
 
 ::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
+  display: none;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -14,4 +29,9 @@
 
 ::-webkit-scrollbar-track {
   background: #0000;
+}
+
+::selection {
+  background: #0002;
+  color: black;
 }
