@@ -12,14 +12,15 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }: { children: ReactElement }) {
+  
   return (
     <html lang='ja'>
       <body style={{ margin: 0, padding: 0 }}>
         <Providers>
-          <ModalProvider>
+          <ModalProvider >
             <LayoutTransition
             >
-              {children}
+                {children}
             </LayoutTransition>
             <Header />
           </ModalProvider>

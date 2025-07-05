@@ -1,0 +1,108 @@
+:global(h1) {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+
+:global(* + h1) {
+    margin-top: 3rem;
+}
+
+:global(h2) {
+  font-size: 1.4rem;
+}
+
+:global(* + h2) {
+    margin-top: 1.5rem;
+}
+
+:global(p) {
+  margin: 0.7rem 0;
+  line-height: 1.4rem;
+}
+
+:global(strong) {
+  font-weight: bold;
+  margin: 0 0.2rem;
+}
+
+:global(table) {
+  border-collapse: collapse;
+  margin: 1.5em auto;
+  min-width: 60%;
+  background-color: #00000002;
+  font-size: 0.9rem;
+}
+
+:global(th),
+:global(td) {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #0003;
+}
+
+:global(th) {
+  background-color: #0001;
+}
+
+:global(tr:nth-child(even)) {
+  background-color: #00000005;
+}
+
+:global(ul) {
+  padding-left: 1.3rem;
+  ::marker {
+  }
+}
+
+:global(ol) {
+  ::marker {
+    font-weight: bold;
+  }
+}
+
+:global(li) {
+  margin: 0.5rem 0;
+}
+
+:global(code) {
+  border: 1px solid #0002;
+  padding: 0.1rem 0.3rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-family: 'consolas';
+}
+
+:global(pre code) {
+  border: 1px none #0000;
+}
+
+:global(pre:has(code)) {
+  border: 1px solid #0002;
+  padding: 0.5rem 0.5rem;
+  margin: 1.0rem 0;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-family: 'consolas';
+}
+
+:global(a) {
+  display: inline-block;
+  color: #000;
+  cursor: pointer;
+  text-decoration-line: none;
+  transition: transform 0.3s ease;
+  background-image: repeating-linear-gradient(to right, black 0 3px, transparent 3px 6px);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 100% 90%;
+  padding-bottom: 0;
+}
+
+:global(a:hover) {
+  transform: scale(1.2);
+}
+
+:global(a:active) {
+  transform: scale(0.8);
+}

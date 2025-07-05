@@ -3,15 +3,17 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import Box from './ui/Box'
+import Box, { Large, ModalBox } from './ui/Box'
 import Button from './ui/Button'
 import TextField from './ui/Textarea'
+import { useModal } from '@/hooks/ModalContext'
 
 export default function AuthModal() {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [comment, setComment] = useState('')
   const [error, setError] = useState('')
+  const {popModal} = useModal()
 
   const handleSubmit = async () => {
     setError('')
@@ -45,21 +47,17 @@ export default function AuthModal() {
     if (signInRes?.error) {
       setError('認証に失敗しました。名前またはパスワードを確認してください。')
     } else {
-      window.location.reload()
+      //window.location.reload()
+      popModal('auth')
     }
   }
 
   return (
-    <Box style={{ width: '20rem' }}>
-      <h2>サインイン</h2>
-      <Box style={{ color: 'red' }}>{error}</Box>
+    <ModalBox title='サインイン' handleOK={handleSubmit} error={error}>
       ユーザ ID
       <TextField single value={name} onChange={e => setName(e)} />
       パスワード
       <TextField single password value={password} onChange={e => setPassword(e)} />
-      <Box row style={{marginTop: '1rem', justifyContent: 'flex-end'}}>
-        <Button onClick={handleSubmit}>OK</Button>
-      </Box>
-    </Box>
+    </ModalBox>
   )
 }

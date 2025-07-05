@@ -1,111 +1,154 @@
-"use client";
+'use client'
 import React, {
-    createContext,
-    useContext,
-    useState,
-    useRef,
-    ReactNode,
-    ReactElement,
-} from "react";
-import { useTransition, animated, config } from "@react-spring/web";
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  ReactNode,
+  ReactElement,
+  useEffect,
+  RefAttributes,
+} from 'react'
+import { useTransition, animated, config } from '@react-spring/web'
 
 type ModalItem = {
-    key: number;
-    renderer: () => ReactElement;
-};
+  key: string
+  renderer: () => ReactElement
+}
 
 const ModalContext = createContext<{
-    popModal: () => void;
-    pushModal: (renderer: () => ReactElement) => void;
+  popModal: (tag: string) => void
+  pushModal: (tag: string, renderer: () => ReactElement, multiple?: boolean ) => void
 }>({
-    popModal: () => { },
-    pushModal: () => { },
-});
+  popModal: () => {},
+  pushModal: () => {},
+})
 
-export const ModalProvider = ({ children }: { children: ReactNode }) => {
-    const [modals, setModals] = useState<ModalItem[]>([]);
-    const nextKey = useRef(0);
+export const ModalProvider = ({ children }: { children: ReactNode; }) => {
+  const [modals, setModals] = useState<ModalItem[]>([])
+  const nextKey = useRef(0)
 
-    const pushModal = (renderer: () => ReactElement) => {
-        setModals((prev) => [
-            ...prev,
-            { key: nextKey.current++, renderer },
-        ]);
-    };
+  const pushModal = (tag: string, renderer: () => ReactElement, multiple?: boolean) => {
+    setModals(prev => {
+        if(!multiple && prev.find(m => m.key.startsWith(tag))) return prev
+        return [...prev, { key: (tag ?? '') + nextKey.current++, renderer }]
+    } )
+  }
 
-    const popModal = (key?: number) => {
-        setModals((prev) => {
-            if(prev.length === 0) return prev
-            if(key !== undefined && prev[prev.length - 1].key !== key) prev
-            return prev.slice(0, -1)
-        });
-    };
+  useEffect(() => {
+    document.body.style.overflow = modals.length > 0 ? 'hidden' : 'auto'
+  }, [modals.length > 0])
 
-    const transitions = useTransition(modals, {
-        keys: (item) => item.key,
-        from: { opacity: 0, transform: "scale(0)" },
-        enter: { opacity: 1, transform: "scale(1)" },
-        leave: { opacity: 0, transform: "scale(0)" },
-        config: {
-            tension: 300,
-            friction: 20,  
-        },
-    });
+  const popModal_byKey = (key: string) => {
+    setModals(prev => {
+      if (prev.length === 0) return prev
+      if (prev[prev.length - 1].key !== key) return prev
+      return prev.slice(0, -1)
+    })
+  }
 
-    return (
-        <ModalContext.Provider value={{ pushModal, popModal }}>
-            {children}
+  const popModal_byTag = (tag: string) => {
+    setModals(prev => {
+      if (prev.length === 0) return prev
+      if (!prev[prev.length - 1].key.startsWith(tag)) return prev
+      return prev.slice(0, -1)
+    })
+  }
 
-            {transitions((styles, item) => (
-                <animated.div
-                    key={item.key}
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        pointerEvents: modals.length > 0 ? 'auto' : 'none',
-                        zIndex: 10000
-                    }}
-                >
-                    <animated.div
-                        onClick={() => popModal(item.key)}
-                        style={{
-                            position: "absolute",
-                            width: "100%",
-                            height: "100%",
-                            background: "#0000",
-                            backdropFilter: "blur(1px)",
-                            WebkitBackdropFilter: "blur(1px)",
-                            opacity: styles.opacity,
-                            pointerEvents: modals[modals.length - 1]?.key === item.key ? 'auto' : 'none'
-                        }}
-                    />
+  const transitions = useTransition(modals, {
+    keys: item => item.key,
+    from: { opacity: 0, transform: 'scale(0)' },
+    enter: { opacity: 1, transform: 'scale(1)' },
+    leave: { opacity: 0, transform: 'scale(0)' },
+    config: {
+      tension: 300,
+      friction: 20,
+    },
+  })
 
-                    <animated.div
-                        style={{
-                            position: "relative",
-                            background: "#fff",
-                            borderRadius: 4,
-                            padding: "1.5rem",
-                            boxShadow: "0 0 10px rgba(0,0,0,0.2)",
-                            transform: styles.transform,
-                            opacity: styles.opacity,
-                        }}
-                    >
-                        {item.renderer()}
-                    </animated.div>
-                </animated.div>
-            ))}
-        </ModalContext.Provider>
-    );
-};
+  return (
+    <ModalContext.Provider value={{ pushModal, popModal: popModal_byTag }}>
+      {children}
+
+      {transitions((styles, item) => (
+        <animated.div
+          key={item.key}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            pointerEvents: modals.length > 0 ? 'auto' : 'none',
+          }}
+        >
+          <animated.div
+            onClick={() => popModal_byKey(item.key)}
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backdropFilter: 'blur(1px)',
+              WebkitBackdropFilter: 'blur(1px)',
+              opacity: styles.opacity,
+              pointerEvents: modals[modals.length - 1]?.key === item.key ? 'auto' : 'none',
+            }}
+          ></animated.div>
+
+          <animated.div
+            style={{
+              position: 'relative',
+              background: '#fff',
+              borderRadius: 4,
+              padding: '1.5rem',
+              boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+              transform: styles.transform,
+              opacity: styles.opacity,
+            }}
+          >
+            {item.renderer()}
+          </animated.div>
+        </animated.div>
+      ))}
+    </ModalContext.Provider>
+  )
+}
 
 export function useModal() {
-    return useContext(ModalContext);
+  return useContext(ModalContext)
 }
-export default ModalProvider;
+export default ModalProvider
+
+export function Blocker({ block, ...rest }: React.HTMLAttributes<HTMLDivElement> & { block?: boolean }) {
+  const blockerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const blocker = blockerRef.current
+    if (!blocker) return
+
+    const events = ['click', 'dblclick', 'mousedown', 'mouseup', 'wheel', 'scroll', 'touchstart', 'touchmove']
+
+    const handler: EventListenerOrEventListenerObject = e => {
+      if (!block) return
+      if (e.target !== blockerRef.current) return
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    events.forEach(ev => {
+      blocker.addEventListener(ev, handler, { capture: true, passive: false })
+    })
+
+    return () => {
+      events.forEach(ev => {
+        blocker.removeEventListener(ev, handler, { capture: true })
+      })
+    }
+  }, [])
+
+  return <div ref={blockerRef} style={{ position: 'absolute', inset: 0, backgroundColor: '#0002' }} {...rest}></div>
+}

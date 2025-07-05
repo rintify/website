@@ -6,9 +6,9 @@ import path from 'path';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string; scope: string } }
+  { params }: NextParams
 ) {
-  const { userId, scope } = params;
+  const { userId, scope } = await params;
 
   if (scope === 'private') {
     const user = await requireAuth();

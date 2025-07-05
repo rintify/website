@@ -1,13 +1,10 @@
 // app/components/Textarea.tsx
 'use client'
-import React, {
-  CSSProperties,
-  TextareaHTMLAttributes,
-  useRef,
-  useState,
-} from 'react'
+import React, { CSSProperties, TextareaHTMLAttributes, useEffect, useRef, useState } from 'react'
 import styled, { css } from 'styled-components'
 import { useSpring, animated } from '@react-spring/web'
+import { EditIcon, ScaleIcon } from '@/icons'
+import { useModal } from '@/hooks/ModalContext'
 
 type TextareaProps = {
   value?: string
@@ -36,32 +33,37 @@ const sharedStyle = css`
   border: none;
   outline: none;
   caret-color: #000;
+  resize: none;
 `
 
 const StyledTextarea = styled.textarea`
   ${sharedStyle}
-  resize: none;
   height: 5.5rem;
 `
 
 const StyledInput = styled.input`
   ${sharedStyle}
 `
+const StyledFullTextarea = styled.textarea`
+  ${sharedStyle}
+  height: 80vh;
+  width: 80vw;
+`
 
 const AnimatedContainer = animated(Container)
 
-export default function TextField({password, single, style, value, onChange }: TextareaProps) {
+export default function TextField({ password, single, style, value, onChange }: TextareaProps) {
   const ref = useRef<HTMLTextAreaElement & HTMLInputElement>(null)
   const [focused, setFocused] = useState(false)
+  const [full, setFull] = useState(false)
+  const { pushModal } = useModal()
 
   const springStyle = useSpring({
     borderColor: focused ? '#000' : '#0003',
     config: { duration: 200 },
   })
 
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
-    e
-  ) => {
+  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = e => {
     if (!single && e.key === 'Tab') {
       e.preventDefault()
       const ta = ref.current
@@ -75,6 +77,23 @@ export default function TextField({password, single, style, value, onChange }: T
     }
   }
 
+  const Modal = () => {
+    useEffect(() => {
+      setFull(true)
+      return () => setFull(false)
+    }, [])
+    return (
+      <StyledFullTextarea
+        ref={ref}
+        defaultValue={value}
+        onChange={e => onChange?.(e.target.value)}
+        onKeyDown={handleKeyDown}
+        spellCheck={false}
+        autoComplete='new-password'
+      />
+    )
+  }
+
   return (
     <AnimatedContainer style={{ ...springStyle, ...style }}>
       {single ? (
@@ -82,23 +101,31 @@ export default function TextField({password, single, style, value, onChange }: T
           ref={ref}
           type={password ? 'password' : 'text'}
           value={value}
-          onChange={(e) => onChange?.(e.target.value)}
+          onChange={e => onChange?.(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           spellCheck={false}
-          autoComplete="new-password"
+          autoComplete='new-password'
         />
       ) : (
-        <StyledTextarea
-          ref={ref}
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onKeyDown={handleKeyDown}
-          spellCheck={false}
-          autoComplete="new-password"
-        />
+        <>
+          <StyledTextarea
+            ref={ref}
+            value={value}
+            onChange={e => onChange?.(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={handleKeyDown}
+            spellCheck={false}
+            autoComplete='new-password'
+          />
+          <ScaleIcon
+            onClick={() => {
+              pushModal('full', () => <Modal />)
+            }}
+            style={{ width: '1rem', opacity: 0.5, position: 'absolute', bottom: '0.1rem', right: '0.5rem' }}
+          />
+        </>
       )}
     </AnimatedContainer>
   )

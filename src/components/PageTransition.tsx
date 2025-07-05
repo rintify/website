@@ -2,11 +2,11 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { useSelectedLayoutSegment, usePathname } from 'next/navigation'
+import { useSelectedLayoutSegment } from 'next/navigation'
 import { LayoutRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
-import { useContext, useEffect, useRef } from 'react'
+import { Suspense, useContext, useEffect, useRef, useState } from 'react'
+import { LoadingCover } from './ui/LoadingBar'
 
-/** 前回の値を保持するフック */
 function usePreviousValue<T>(value: T): T | undefined {
   const prev = useRef<T | undefined>(undefined)
   useEffect(() => {
@@ -18,7 +18,6 @@ function usePreviousValue<T>(value: T): T | undefined {
   return prev.current
 }
 
-/** コンテキストを“凍結”して急な更新を防ぐ */
 function FrozenRouter({ children }: { children: React.ReactNode }) {
   const context = useContext(LayoutRouterContext)
   const prevContext = usePreviousValue(context) || null
@@ -30,7 +29,6 @@ function FrozenRouter({ children }: { children: React.ReactNode }) {
   return <LayoutRouterContext.Provider value={changed ? prevContext : context}>{children}</LayoutRouterContext.Provider>
 }
 
-/** ページ遷移用コンポーネント */
 interface LayoutTransitionProps {
   children: React.ReactNode
   className?: string
@@ -38,6 +36,11 @@ interface LayoutTransitionProps {
 }
 export function LayoutTransition({ children, style }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment()
+
+  const [visible, setVisble] = useState(false)
+  useEffect(() => {
+    setVisble(true)
+  }, [])
 
   return (
     <div
@@ -47,6 +50,7 @@ export function LayoutTransition({ children, style }: LayoutTransitionProps) {
         height: '100%',
       }}
     >
+      <LoadingCover progress={visible}/>
       <AnimatePresence mode='sync' initial={false}>
         <motion.div
           key={segment}
@@ -59,10 +63,9 @@ export function LayoutTransition({ children, style }: LayoutTransitionProps) {
             ...style,
           }}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1}}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.1 }}
-          
         >
           <FrozenRouter>{children}</FrozenRouter>
         </motion.div>

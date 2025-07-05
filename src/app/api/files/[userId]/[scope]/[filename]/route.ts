@@ -6,9 +6,9 @@ import mime from 'mime-types';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string; scope: string; filename: string } }
+  { params }: NextParams
 ) {
-  const { userId, scope, filename } = params;
+  const { userId, scope, filename } = await params;
 
   if (scope === 'private') {
     const user = await requireAuth();

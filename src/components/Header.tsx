@@ -5,7 +5,7 @@ import styled from '@emotion/styled'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useUser } from '@/hooks/useUser'
+import { useSessionUser } from "@/lib/api"
 import ButtonDiv from './ui/TextButton'
 
 export const HeaderMargine = () => {
@@ -16,6 +16,7 @@ const menuItems: { menu: string; link: string }[] = [
   { menu: 'Top', link: '/' },
   { menu: 'Home', link: '/home' },
   { menu: 'Account', link: '/account' },
+  { menu: 'Delay', link: '/delay' },
 ]
 
 const Header: React.FC = () => {
@@ -26,7 +27,7 @@ const Header: React.FC = () => {
 
   const lastScrollY = useRef(0)
 
-  const user = useUser()
+  const {session,sessionLoading} = useSessionUser()
   const [showHeader, setShowHeader] = useState(true)
 
   useEffect(() => {
@@ -41,6 +42,7 @@ const Header: React.FC = () => {
   }
 
   useEffect(() => {
+    if(!window) return
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       if (currentScrollY <= 1) {
@@ -59,7 +61,13 @@ const Header: React.FC = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  })
+  }, [showHeader,isMenuOpen])
+
+  useEffect(() => {
+    if(!window) return
+    if(window.scrollY < 1) setShowHeader(true)
+  }) 
+
 
   const isDefault = !item || item.link == '/'
 
@@ -231,7 +239,7 @@ const Header: React.FC = () => {
                 minHeight: '0.5rem',
               }}
             >
-              <ButtonDiv onClick={() => router.push('/account')}>{user ? (user.name ?? 'User') : 'Login'}</ButtonDiv>
+              <ButtonDiv onClick={() => router.push('/account')}>{session ? (session.name ?? 'User') : 'Login'}</ButtonDiv>
             </div>
           </div>
 
@@ -250,7 +258,7 @@ const Header: React.FC = () => {
             }}
           >
             <img
-              src={user?.icon}
+              src={session?.icon}
               alt='menu icon'
               style={{
                 width: '100%',

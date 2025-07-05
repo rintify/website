@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../app/api/auth/[...nextauth]/route';
 import fs from 'fs';
 import path from 'path';
+import { Object} from 'runtypes';
+import { NextRequest } from 'next/server';
 
 export async function requireAuth() {
     const session = await getServerSession(authOptions);
@@ -23,4 +25,12 @@ export function safeUploadsPath(...seg: string[]) {
     if (!fs.existsSync(filepath)) return
 
     return filepath
+}
+
+export async function parseRequest<O extends Object.Fields = Object.Fields>(schema: Object<O>, req: NextRequest) {
+  try {
+    return schema.check(await req.json())
+  } catch {
+    return;
+  }
 }

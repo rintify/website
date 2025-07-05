@@ -1,15 +1,37 @@
 @font-face {
-  font-family: 'MPLUS1p';
-  src: url('/MPLUS1p-Light.ttf') format('truetype');
+  font-family: 'Font';
+  src: url('/M_PLUS_Rounded_1c/MPLUSRounded1c-Light.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
-*{
-  margin: 0;
-  font-family: 'MPLUS1p', sans-serif;
+@font-face {
+  font-family: 'Font';
+  src: url('/M_PLUS_Rounded_1c/MPLUSRounded1c-Regular.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'consolas';
+  src: url('/consolas/consola.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+body,
+textarea,
+input {
+  font-family: 'Font', sans-serif;
   line-height: 1.2;
+  line-break: normal;
+}
+
+* {
+  margin: 0;
 }
 
 ::-webkit-scrollbar {
