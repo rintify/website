@@ -2,12 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import styled, { keyframes } from 'styled-components'
 
-type LoadingBarProps = {
-  progress: number | boolean ,
-  message?: string
-}
 
-export const LoadingBar: React.FC<LoadingBarProps> = ({ progress }) => {
+const LoadingBar: React.FC<{progress: number | boolean}> = ({ progress }) => {
   const [internalProgress, setInternalProgress] = useState(0)
   const rafRef = useRef<number>(0)
 
@@ -77,7 +73,9 @@ const Char = styled.span<{ $delay: number }>`
   animation-delay: ${({ $delay }) => $delay}s;
   `
 
-export const LoadingCover: React.FC<LoadingBarProps> = ({ progress, message }) => {
+export const LoadingCover: React.FC<{expose?: boolean, list: {progress: number | boolean , message?: string}[]}> = ({ list, expose }) => {
+  if(list.length === 0) return
+  const {progress, message} = list.reduce((a,b) => (a.progress === false ? '0.9' : a.progress) < (b.progress === false ? '0.9' : b.progress) ? a : b)
   const isLoaded = typeof progress === 'number' ? progress >= 1 : progress
 
   const [mounted, setMounted] = useState(!isLoaded)
@@ -98,10 +96,13 @@ export const LoadingCover: React.FC<LoadingBarProps> = ({ progress, message }) =
       return () => clearTimeout(t)
     } else {
       setMounted(true)
+      setVisible(false)
       clearTimeout(showTimeoutRef.current)
-      showTimeoutRef.current = window.setTimeout(() => setVisible(true), 500)
+      showTimeoutRef.current = window.setTimeout(() => {
+        setVisible(true)
+      }, 500)
     }
-  }, [progress])
+  }, [isLoaded])
 
   if (!mounted) return
 
@@ -112,7 +113,7 @@ export const LoadingCover: React.FC<LoadingBarProps> = ({ progress, message }) =
         top: 0,
         left: 0,
         backgroundColor: 'white',
-        opacity: isLoaded ? 0 : 1,
+        opacity: isLoaded || expose && !visible  ? 0 : 1,
         transition: 'opacity 0.3s ease',
         width: '100%',
         height: '100%',

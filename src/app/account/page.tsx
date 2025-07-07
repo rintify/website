@@ -13,7 +13,7 @@ import Box, { Large, Small } from '@/components/ui/Box'
 import TextField from '@/components/ui/Textarea'
 import { EditIcon } from '@/icons'
 import { useUser } from '@/lib/api'
-import { LoadingBar, LoadingCover } from '@/components/ui/LoadingBar'
+import { LoadingCover } from '@/components/ui/LoadingBar'
 import { MarkdownBox } from '@/components/ui/Markdown'
 import { formatJapaneseDate } from '@/lib/util'
 import { UserIcon } from '@/components/Components'
@@ -52,11 +52,11 @@ export default function HomePage() {
         title='アイコン'
         handleOK={async () => {
           if (!session) return 'ログインしてください'
+          setProgress(0)
           let res
           if (iconFile) {
             let compressedFile = iconFile
             try {
-              setProgress(0)
               for (let i = 0; i < 5; i++) {
                 compressedFile = await imageCompression(compressedFile, {
                   onProgress: a => setProgress(0.9*a/100),
@@ -66,12 +66,12 @@ export default function HomePage() {
                 })
                 if (compressedFile.size <= 50*1024) break
               }
-              setProgress(1)
             } catch {
               setProgress(1)
               return '画像ファイルを指定してください'
             }
             res = await uploadFile(session?.id, 'icons', compressedFile)
+            setProgress(1)
             if (!res.ok) return res.error
           }
 
@@ -82,10 +82,10 @@ export default function HomePage() {
         <FileBox
           files={iconFile}
           fullDrop
-          style={{ alignSelf: 'center', width: '15rem', height: '5rem' }}
+          style={{ alignSelf: 'center', width: '15rem', height: '8rem' }}
           onChange={files => setIconFile(files[0])}
         />
-        <LoadingCover progress={progress} message='画像を圧縮中' />
+        <LoadingCover list={[{progress: progress, message: '画像を圧縮中'}]} />
       </ModalBox>
     )
   }
@@ -96,7 +96,7 @@ export default function HomePage() {
     <PageBox>
       <Box row style={{ marginBottom: '2rem' }}>
         <ButtonDiv onClick={() => pushModal('icon', () => <IconModal />)}>
-          <UserIcon userId={session?.id} style={{ width: '3rem', height: '3rem ' }} />
+          <UserIcon userId={session?.id} style={{ width: '6rem', height: '6rem ' }} />
         </ButtonDiv>
         <div>
           <Box row>
@@ -119,7 +119,7 @@ export default function HomePage() {
       <Button style={{ alignSelf: 'center', marginTop: '2rem' }} onClick={handleAuth}>
         {user ? 'ログアウト' : 'ログイン・新規登録'}
       </Button>
-      <LoadingCover progress={userLoading !== 'loading' && !sessionLoading} message='ユーザ情報取得中' />
+      <LoadingCover list={[{progress: userLoading !== 'loading' && !sessionLoading, message: 'ユーザ情報取得中'}]} />
     </PageBox>
   )
 }
@@ -164,7 +164,7 @@ const EditModal = () => {
       <TextField single value={nickName} onChange={e => setNickName(e)} />
       コメント
       <TextField value={comment} onChange={e => setComment(e)} />
-      <LoadingCover progress={userLoading != 'loading'} message={'ユーザ情報取得中'} />
+      <LoadingCover list={[{progress: userLoading != 'loading', message: 'ユーザ情報取得中'}]}/>
     </ModalBox>
   )
 }

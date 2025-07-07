@@ -49,6 +49,12 @@ export const Small = styled.div`
   min-height: 1.2em;
 `
 
+export const Line = styled.div`
+  background-color: #000;
+  height: 1px;
+  width: 100%;
+`
+
 export const ModalBox: React.FC<{
   children: ReactNode
   style?: CSSProperties

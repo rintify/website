@@ -13,6 +13,7 @@ type ButtonProps = {
   children?: ReactNode;
   onClick?: () => void;
   style?: CSSProperties;
+  scaleRatio?: number;
 };
 
 export default function ButtonDiv({
@@ -20,6 +21,7 @@ export default function ButtonDiv({
   children,
   onClick,
   style = {},
+  scaleRatio = 1
 }: ButtonProps) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -34,9 +36,10 @@ export default function ButtonDiv({
   return (
     <animated.div
       style={{
-        display: 'inline-block',
+        display: 'inline-flex',
+        alignItems: 'baseline',
         cursor: 'pointer',
-        transform: scale.to((s) => `scale(${s})`),
+        transform: scale.to((s) => `scale(${1 + scaleRatio*(s - 1)})`),
         ...(line && {
           backgroundSize: dashH.to((d) => `8px ${d}px`),
           backgroundRepeat: 'repeat-x',

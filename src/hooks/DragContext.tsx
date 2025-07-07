@@ -10,17 +10,23 @@ import {
   DraggableNode,
   useDraggable,
   TouchSensor,
+  defaultDropAnimation,
+  ClientRect,
+  Over,
 } from '@dnd-kit/core'
 import { CSSProperties } from 'styled-components'
 import { useSpring, animated, to } from '@react-spring/web'
 import { ulid } from 'ulid'
 import { createPortal } from 'react-dom'
+import { CollisionDetection, Rect } from '@dnd-kit/core/dist/utilities'
 
 type DropHandler = (data: any) => void
 type DataHandler = () => Promise<any> | any
+type DragHandler = () => void
+type OverHandler = (data: any) => void
 
 interface DragContextValue {
-  register: (id: string, onDrop: DropHandler, getData: DataHandler) => void
+  register: (id: string, onDrop: DropHandler, getData: DataHandler, onDrag: DragHandler, onOver: OverHandler) => void
   unregister: (id: string) => void
   isDragging: boolean
 }
@@ -32,12 +38,24 @@ const DragContext = createContext<DragContextValue>({
 })
 
 export const DragProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [handlers, setHandlers] = useState<Record<string, { onDrop: DropHandler; getData: DataHandler }>>({})
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor))
+  const [handlers, setHandlers] = useState<
+    Record<string, { onDrop: DropHandler; getData: DataHandler; onDrag: DragHandler; onOver: OverHandler }>
+  >({})
+  const sensors = useSensors(useSensor(PointerSensor,{
+    activationConstraint: {
+      delay: 500,
+      tolerance: 5
+    }
+  }), useSensor(TouchSensor,{
+    activationConstraint: {
+      delay: 500,
+      tolerance: 5
+    }
+  }))
   const [isDragging, setDragging] = useState(false)
 
-  const register = useCallback(
-    (id: string, onDrop: DropHandler, getData: DataHandler) => setHandlers(h => ({ ...h, [id]: { onDrop, getData } })),
+  const register = useCallback<DragContextValue['register']>(
+    (id, onDrop, getData, onDrag, onOver) => setHandlers(h => ({ ...h, [id]: { onDrop, getData, onDrag, onOver } })),
     []
   )
 
@@ -57,15 +75,31 @@ export const DragProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     activeHandler?.onDrop(await overHandler?.getData())
   }
 
+  const handleOver = async (activeId: string, overId?: string) => {
+    const overHandler = overId ? handlers[overId] : undefined
+    const activeHandler = handlers[activeId]
+    overHandler?.onOver(await activeHandler?.getData())
+    activeHandler?.onOver(await overHandler?.getData())
+  }
+
   return (
     <DndContext
+      autoScroll={false}
       sensors={sensors}
-      onDragStart={() => setDragging(true)}
+      onDragStart={({ active }) => {
+        setDragging(true)
+        const content = handlers[active.id]?.onDrag()
+      }}
       onDragEnd={({ active, over }) => {
         handleDrop(active.id as string, over?.id as string | undefined)
         setDragging(false)
       }}
-      onDragCancel={() => setDragging(false)}
+      onDragCancel={() => {
+        setDragging(false)
+      }}
+      onDragOver={({ active, over }) => {
+        handleOver(active.id as string, over?.id as string | undefined)
+      }}
     >
       <DragContext.Provider value={{ register, unregister, isDragging }}>{children}</DragContext.Provider>
     </DndContext>
@@ -77,15 +111,20 @@ export const useDragContext = () => useContext(DragContext)
 type Props = {
   onDrop?: DropHandler
   getData?: DataHandler
+  onOver?: OverHandler
+  onDrag?: DragHandler
+  onClick?: () => void
   children: React.ReactNode
-  style?: CSSProperties
+  style?: CSSProperties | ((isOver: boolean) => CSSProperties)
   fullDrop?: boolean
+  noborder?: boolean
+  scaleRatio?: number
 }
 
-export function DropDiv({ fullDrop, style, onDrop, getData, children }: Props) {
+export function DropDiv({ noborder, fullDrop, style, onDrop, getData, children }: Props) {
   const id = useRef(ulid()).current
   const { isOver, setNodeRef } = useDroppable({ id })
-  const { register, unregister, isDragging: isDraggings} = useDragContext()
+  const { register, unregister, isDragging: isDraggings } = useDragContext()
   const [isDragging, setIsDragging] = useState(false)
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement> | DragEvent) => {
@@ -132,7 +171,13 @@ export function DropDiv({ fullDrop, style, onDrop, getData, children }: Props) {
   }, [fullDrop, onDrop])
 
   useEffect(() => {
-    register(id, onDrop ?? function (data) {}, getData ?? async function () {})
+    register(
+      id,
+      onDrop ?? function (data) {},
+      getData ?? async function () {},
+      () => undefined,
+      () => {}
+    )
     return () => {
       unregister(id)
     }
@@ -143,13 +188,16 @@ export function DropDiv({ fullDrop, style, onDrop, getData, children }: Props) {
     config: { tension: 300, friction: 10 },
   })
 
+  if (typeof style === 'function') style = style(isOver)
+
   return (
     <div
       style={{
         position: 'relative',
-        userSelect: 'none',
-        minHeight: '5rem',
-        minWidth: '8rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
         ...style,
       }}
     >
@@ -157,32 +205,19 @@ export function DropDiv({ fullDrop, style, onDrop, getData, children }: Props) {
         ref={setNodeRef}
         style={{
           position: 'absolute',
-          border: '1px dashed #000',
           width: '100%',
           height: '100%',
+          border: !noborder ? '1px dashed #000' : undefined,
+          zIndex: isDragging || isDraggings ? 1000 : 0,
           ...spStyle,
         }}
-        onDragEnter={fullDrop ? handleDragEnter : () => {}}
-        onDragOver={fullDrop ? handleDragOver : () => {}}
-        onDragLeave={fullDrop ? handleDragLeave : () => {}}
-        onDrop={fullDrop ? handleDrop : () => {}}
+        onDragEnter={!fullDrop ? handleDragEnter : undefined}
+        onDragOver={!fullDrop ? handleDragOver : undefined}
+        onDragLeave={!fullDrop ? handleDragLeave : undefined}
+        onDrop={!fullDrop ? handleDrop : undefined}
       ></animated.div>
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -45%)',
-          display: 'flex',
-          justifyItems: 'flex-start',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          zIndex: '100',
-        }}
-      >
-        {children}
-      </div>
-      {fullDrop &&
+      {children}
+      {fullDrop && document?.body &&
         createPortal(
           <div
             style={{
@@ -201,22 +236,25 @@ export function DropDiv({ fullDrop, style, onDrop, getData, children }: Props) {
   )
 }
 
-export function DragDiv({ onDrop, getData, children, style }: Props) {
+export function DragDiv({ onClick,onDrag, onDrop, getData, onOver, children, style, scaleRatio = 1 }: Props) {
   const id = useRef(ulid()).current
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
+  const renderRef = useRef<ReactNode>(undefined)
+
+  const { attributes, listeners, setNodeRef, active, transform, isDragging } = useDraggable({ id })
   const { register, unregister } = useDragContext()
   const [hovered, setHovered] = React.useState(false)
   const [pressed, setPressed] = React.useState(false)
+  const [over, setover] = useState(false)
+  const [rect, setrect] = useState<ClientRect | undefined>(undefined)
+
+  if (typeof style === 'function') style = style(over)
 
   useEffect(() => {
-    register(id, onDrop ?? function (data) {}, getData ?? async function () {})
-    return () => {
-      unregister(id)
-    }
-  }, [id, onDrop, getData, register, unregister])
+    if (active?.id === id && active?.rect.current.initial) setrect(active.rect.current.initial)
+  }, [active, active?.rect.current, active?.rect.current.initial])
 
   const { scale } = useSpring({
-    scale: pressed ? 1 : hovered ? 1.1 : 1,
+    scale: pressed ? 0.9 : hovered ? 1.1 : 1,
     config: { tension: 300, friction: 10 },
   })
 
@@ -227,20 +265,35 @@ export function DragDiv({ onDrop, getData, children, style }: Props) {
     config: { duration: !transform ? 200 : 0 },
   })
 
+  useEffect(() => {
+    if (isDragging) {
+      setover(true)
+    } else {
+      const t = window.setTimeout(() => {
+        setover(false)
+        setHovered(false)
+        setPressed(false)
+        setrect(undefined)
+      }, 250)
+      return () => {
+        if (isDragging) clearTimeout(t)
+      }
+    }
+  }, [isDragging])
+
   const { shaddow } = useSpring({
-    shaddow: hovered || transform || isDragging ? 0.3 : 0,
-    config: { duration: 200 },
+    shaddow: over ? 0.2 : 0,
+    config: { duration: 100 },
   })
 
-  return (
+  renderRef.current = (
     <animated.div
       ref={setNodeRef}
       style={{
-        transform: to([x, y, scale], (x, y, s) => `translate3d(${x}px, ${y}px, 0) scale(${s})`),
-        borderRadius: '5px',
-        cursor: 'grab',
-        boxShadow: to([shaddow], shaddow => `-1rem 1rem 20px rgba(0,0,0,${shaddow})`),
-        backgroundColor: 'transparent',
+        transform: to([scale, x, y], (s, x, y) => `translate3d(${x}px, ${y}px, 0) scale(${1 + scaleRatio * (s - 1)})`),
+        cursor: isDragging ? 'grabbing' : 'pointer',
+        backgroundColor: over ? 'white' : 'transparent',
+        boxShadow: to([shaddow], shaddow => `-1rem 2rem 30px rgba(0,0,0,${shaddow})`),
         touchAction: 'none',
         ...style,
       }}
@@ -255,8 +308,42 @@ export function DragDiv({ onDrop, getData, children, style }: Props) {
       onMouseUp={() => setPressed(false)}
       onTouchStart={() => setPressed(true)}
       onTouchEnd={() => setPressed(false)}
+      onClick={onClick}
     >
       {children}
     </animated.div>
   )
+
+  useEffect(() => {
+    register(
+      id,
+      onDrop ?? function (data) {},
+      getData ?? async function () {},
+      onDrag ?? function () {},
+      onOver ?? function () {}
+    )
+    return () => {
+      unregister(id)
+    }
+  }, [id, onDrop, getData, register, unregister])
+
+  return !over || !rect || !document?.body
+    ? renderRef.current
+    : createPortal(
+        <div
+          style={{
+            position: 'absolute',
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+            height: rect.height,
+            zIndex: 100000000,
+          }}
+        >
+          {renderRef.current}
+        </div>,
+        document.body
+      )
 }
+
+

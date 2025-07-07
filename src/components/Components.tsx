@@ -27,7 +27,7 @@ export function UserIcon({userId, style }: { userId: string | undefined; style?:
           zIndex: 1
         }}
       />
-      <div
+      {userId && <div
         style={{
           position: 'absolute',
           top: 0,
@@ -39,7 +39,7 @@ export function UserIcon({userId, style }: { userId: string | undefined; style?:
           backgroundPosition: 'center',
           zIndex: 2
         }}
-      />
+      />}
     </div>
   )
 }

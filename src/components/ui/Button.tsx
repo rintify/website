@@ -1,11 +1,30 @@
 'use client'
 import React, { ReactNode } from 'react'
 import { useSpring, animated } from '@react-spring/web'
+import ButtonDiv from './TextButton'
 
 type ButtonProps = {
   children?: ReactNode
   onClick?: () => void
   style?: React.CSSProperties
+}
+
+export function FloatingButton({ children, onClick, style = {} }: ButtonProps) {
+  return <ButtonDiv onClick={onClick} style={{
+    position: 'fixed',
+    borderRadius: '50%',
+    backgroundColor: 'black',
+    bottom: '2rem',
+    right: '2rem',
+    zIndex: 10000,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '4rem',
+    height: '4rem',
+  }}>
+    {children}
+  </ButtonDiv>
 }
 
 export default function Button({ children, onClick, style = {} }: ButtonProps) {
@@ -27,9 +46,10 @@ export default function Button({ children, onClick, style = {} }: ButtonProps) {
         backgroundColor: '#222',
         color: '#fff',
         cursor: 'pointer',
-        display: 'inline-block',
+        display: 'inline-flex',
         userSelect: 'none',
-        textAlign: 'center',
+        alignItems: 'center',
+        justifyContent: 'center',
         ...spStyle,
         ...style,
       }}

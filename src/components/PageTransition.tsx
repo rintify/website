@@ -50,7 +50,7 @@ export function LayoutTransition({ children, style }: LayoutTransitionProps) {
         height: '100%',
       }}
     >
-      <LoadingCover progress={visible}/>
+      <LoadingCover list={[{progress: visible}]}/>
       <AnimatePresence mode='sync' initial={false}>
         <motion.div
           key={segment}
