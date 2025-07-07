@@ -1,8 +1,10 @@
 // app/components/Box.tsx
 'use client'
-import React, { CSSProperties, FC, HTMLAttributes, JSX, ReactNode } from 'react'
+import React, { CSSProperties, FC, HTMLAttributes, JSX, ReactNode, useState } from 'react'
 import styled from 'styled-components'
 import Button from './Button'
+import { useModal } from '@/hooks/ModalContext'
+import { useSpring, animated } from '@react-spring/web'
 
 type BoxProps = {
   row?: boolean
@@ -50,17 +52,33 @@ export const Small = styled.div`
 export const ModalBox: React.FC<{
   children: ReactNode
   style?: CSSProperties
-  error?: ReactNode
   title: ReactNode
-  handleOK: () => void
-}> = ({ handleOK, title, style, children, error }) => {
+  handleOK: () => Promise<void | string>
+}> = ({ handleOK, title, style, children }) => {
+  const [error, setError] = useState<string>('')
+  const { shakeModal } = useModal()
+
   return (
     <Box style={{ width: '20rem', ...style }}>
-      <Large>{title}</Large>
-      <Box style={{ color: 'red' }}>{error ?? ''}</Box>
+      <Large style={{ fontSize: '1.5rem' }}>{title}</Large>
+      <Box
+        style={{ color: 'red', marginBottom: '0.8rem', height: error ? '1.2em' : '0', transition: 'height ease 0.2s' }}
+      >
+        {error ?? ''}
+      </Box>
       {children}
       <Box row style={{ width: '100%', marginTop: '1rem', justifyContent: 'flex-end' }}>
-        <Button onClick={handleOK}>OK</Button>
+        <Button
+          onClick={async () => {
+            const res = await handleOK()
+            if (res) {
+              setError(res)
+              shakeModal()
+            }
+          }}
+        >
+          OK
+        </Button>
       </Box>
     </Box>
   )
@@ -103,7 +121,6 @@ type ProfileTableProps = {
 }
 
 export const ProfileTable = ({ children, style }: ProfileTableProps) => {
-
   return (
     <div
       style={{
@@ -122,7 +139,7 @@ export const ProfileTable = ({ children, style }: ProfileTableProps) => {
             whiteSpace: i % 2 === 0 ? 'normal' : 'break-spaces',
             wordBreak: i % 2 === 0 ? undefined : 'break-word',
             paddingRight: '1rem',
-            borderRight: i % 2 === 0 ? '1px solid #000' : undefined
+            borderRight: i % 2 === 0 ? '1px solid #000' : undefined,
           }}
         >
           {child}

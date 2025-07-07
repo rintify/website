@@ -9,7 +9,7 @@ import React, {
   useEffect,
   RefAttributes,
 } from 'react'
-import { useTransition, animated, config } from '@react-spring/web'
+import { useTransition, animated, config, useSpring, useSpringRef } from '@react-spring/web'
 
 type ModalItem = {
   key: string
@@ -18,21 +18,23 @@ type ModalItem = {
 
 const ModalContext = createContext<{
   popModal: (tag: string) => void
-  pushModal: (tag: string, renderer: () => ReactElement, multiple?: boolean ) => void
+  pushModal: (tag: string, renderer: () => ReactElement, multiple?: boolean) => void
+  shakeModal: () => void
 }>({
   popModal: () => {},
   pushModal: () => {},
+  shakeModal: () => {},
 })
 
-export const ModalProvider = ({ children }: { children: ReactNode; }) => {
+export const ModalProvider = ({ children }: { children: ReactNode }) => {
   const [modals, setModals] = useState<ModalItem[]>([])
   const nextKey = useRef(0)
 
   const pushModal = (tag: string, renderer: () => ReactElement, multiple?: boolean) => {
     setModals(prev => {
-        if(!multiple && prev.find(m => m.key.startsWith(tag))) return prev
-        return [...prev, { key: (tag ?? '') + nextKey.current++, renderer }]
-    } )
+      if (!multiple && prev.find(m => m.key.startsWith(tag))) return prev
+      return [...prev, { key: (tag ?? '') + nextKey.current++, renderer }]
+    })
   }
 
   useEffect(() => {
@@ -66,8 +68,14 @@ export const ModalProvider = ({ children }: { children: ReactNode; }) => {
     },
   })
 
+  const [shaking, setShaking] = useState(false)
+
+  const shakeModal = () => {
+    setShaking(prev => !prev)
+  }
+
   return (
-    <ModalContext.Provider value={{ pushModal, popModal: popModal_byTag }}>
+    <ModalContext.Provider value={{ pushModal, popModal: popModal_byTag, shakeModal }}>
       {children}
 
       {transitions((styles, item) => (
@@ -99,19 +107,21 @@ export const ModalProvider = ({ children }: { children: ReactNode; }) => {
             }}
           ></animated.div>
 
-          <animated.div
-            style={{
-              position: 'relative',
-              background: '#fff',
-              borderRadius: 4,
-              padding: '1.5rem',
-              boxShadow: '0 0 10px rgba(0,0,0,0.2)',
-              transform: styles.transform,
-              opacity: styles.opacity,
-            }}
-          >
-            {item.renderer()}
-          </animated.div>
+          <Shaking able={modals[modals.length - 1]?.key === item.key} value={shaking}>
+            <animated.div
+              style={{
+                position: 'relative',
+                background: '#fff',
+                borderRadius: 4,
+                padding: '1.5rem',
+                boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+                transform: styles.transform,
+                opacity: styles.opacity,
+              }}
+            >
+              {item.renderer()}
+            </animated.div>
+          </Shaking>
         </animated.div>
       ))}
     </ModalContext.Provider>
@@ -151,4 +161,36 @@ export function Blocker({ block, ...rest }: React.HTMLAttributes<HTMLDivElement>
   }, [])
 
   return <div ref={blockerRef} style={{ position: 'absolute', inset: 0, backgroundColor: '#0002' }} {...rest}></div>
+}
+
+
+export const Shaking = ({ able, value, children }: {able: boolean, value: boolean, children: ReactNode }) => {
+
+  const springRef = useSpringRef();
+  const styles = useSpring({
+    ref: springRef,
+    from: { x: 0 },
+
+    to: async (next) => {
+      await next({
+        x: 3,
+        config: { duration: 50 },
+      });
+      await next({
+        x: 0,
+        config: { tension: 2000, friction: 10 },
+      });
+    },
+  });
+
+  const pre = useRef(value)
+
+  useEffect(() => {
+    if(able && pre.current != value) springRef.start();
+    pre.current = value
+  }, [value, springRef]);
+
+  return <animated.div style={{
+      transform: styles.x.to((x) => `translateX(${x}rem)`)
+    }}>{children}</animated.div>;
 }

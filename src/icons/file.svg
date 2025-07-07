@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1000.00" height="1000.00" viewBox="0.00 0.00 1000.00 1000.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g stroke-linecap="round" id="icon">
+<path d="M847.46,226.93 Q847.39,589.57 847.50,952.50 Q847.36,982.11 817.50,982.50 Q513.49,982.11 209.50,982.50 Q179.62,982.11 179.50,952.50 Q179.62,500.27 179.50,48.50 Q179.62,18.43 209.50,18.50 Q417.25,18.45 625.00,18.47" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M840.15,217.70 Q752.20,217.70 664.25,217.68 Q636.53,217.74 636.40,189.83 Q636.42,108.42 636.44,27.00" fill="none" stroke="rgb(7, 0, 0)" stroke-width="2.78" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M626.21,18.10 L632.94,19.97 L635.71,24.48 L636.55,27.60" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="miter"/>
+<path d="M839.84,217.10 L844.87,218.82 L846.81,222.26 L847.58,226.00" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="miter"/>
+<path d="M635.71,24.48 L844.87,218.82" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M844.87,218.82 L844.87,218.82" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -5,6 +5,7 @@ import Providers from './providers'
 import { ModalProvider } from '@/hooks/ModalContext'
 import { LayoutTransition } from '@/components/PageTransition'
 import { ReactElement } from 'react'
+import { DragProvider } from '@/hooks/DragContext'
 
 export const metadata = {
   title: 'Hello World',
@@ -12,18 +13,16 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }: { children: ReactElement }) {
-  
   return (
     <html lang='ja'>
       <body style={{ margin: 0, padding: 0 }}>
         <Providers>
-          <ModalProvider >
-            <LayoutTransition
-            >
-                {children}
-            </LayoutTransition>
-            <Header />
-          </ModalProvider>
+          <DragProvider>
+            <ModalProvider>
+              <LayoutTransition>{children}</LayoutTransition>
+              <Header />
+            </ModalProvider>
+          </DragProvider>
         </Providers>
       </body>
     </html>

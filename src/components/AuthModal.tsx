@@ -12,12 +12,9 @@ export default function AuthModal() {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [comment, setComment] = useState('')
-  const [error, setError] = useState('')
   const {popModal} = useModal()
 
   const handleSubmit = async () => {
-    setError('')
-
     const resCheck = await fetch('/api/auth/check-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,8 +31,7 @@ export default function AuthModal() {
       })
       if (!resSignUp.ok) {
         const body = await resSignUp.json()
-        setError(body.error || '登録に失敗しました')
-        return
+        return body.error || '登録に失敗しました'
       }
     }
 
@@ -45,15 +41,14 @@ export default function AuthModal() {
       password,
     })
     if (signInRes?.error) {
-      setError('認証に失敗しました。名前またはパスワードを確認してください。')
+      return '認証に失敗しました。名前またはパスワードを確認してください。'
     } else {
-      //window.location.reload()
       popModal('auth')
     }
   }
 
   return (
-    <ModalBox title='サインイン' handleOK={handleSubmit} error={error}>
+    <ModalBox title='ログイン・新規登録' handleOK={handleSubmit}>
       ユーザ ID
       <TextField single value={name} onChange={e => setName(e)} />
       パスワード

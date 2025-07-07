@@ -1,11 +1,11 @@
 // app/page.tsx
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import AuthModal from '@/components/AuthModal'
 import Button from '@/components/ui/Button'
-import { useSessionUser } from '@/lib/api'
+import { delay, uploadFile, useSessionUser } from '@/lib/api'
 import { useModal } from '@/hooks/ModalContext'
 import { HeaderMargine } from '@/components/Header'
 import { Medium, ModalBox, PageBox, ProfileTable } from '@/components/ui/Box'
@@ -16,10 +16,14 @@ import { useUser } from '@/lib/api'
 import { LoadingBar, LoadingCover } from '@/components/ui/LoadingBar'
 import { MarkdownBox } from '@/components/ui/Markdown'
 import { formatJapaneseDate } from '@/lib/util'
+import { UserIcon } from '@/components/Components'
+import ButtonDiv from '@/components/ui/TextButton'
+import { FileBox } from '@/components/ui/FileBox'
+import imageCompression from 'browser-image-compression'
 
 export default function HomePage() {
   const { session, sessionLoading } = useSessionUser()
-  const { pushModal } = useModal()
+  const { pushModal, popModal } = useModal()
 
   const { user, userLoading, mutate } = useUser(session?.id)
 
@@ -37,30 +41,83 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if(!sessionLoading && !userLoading && !user) pushModal('auth', () => <AuthModal />)
-  },[userLoading, sessionLoading, user])
+    if (!sessionLoading && !userLoading && !user) pushModal('auth', () => <AuthModal />)
+  }, [userLoading, sessionLoading, user])
+
+  function IconModal() {
+    const [iconFile, setIconFile] = useState<File | undefined>()
+    const [progress, setProgress] = useState(1)
+    return (
+      <ModalBox
+        title='アイコン'
+        handleOK={async () => {
+          if (!session) return 'ログインしてください'
+          let res
+          if (iconFile) {
+            let compressedFile = iconFile
+            try {
+              setProgress(0)
+              for (let i = 0; i < 5; i++) {
+                compressedFile = await imageCompression(compressedFile, {
+                  onProgress: a => setProgress(0.9*a/100),
+                  maxSizeMB: 0.05,
+                  maxWidthOrHeight: 256 ,
+                  useWebWorker: true,
+                })
+                if (compressedFile.size <= 50*1024) break
+              }
+              setProgress(1)
+            } catch {
+              setProgress(1)
+              return '画像ファイルを指定してください'
+            }
+            res = await uploadFile(session?.id, 'icons', compressedFile)
+            if (!res.ok) return res.error
+          }
+
+          popModal('icon')
+          if(res?.ok) window.location.reload()
+        }}
+      >
+        <FileBox
+          files={iconFile}
+          fullDrop
+          style={{ alignSelf: 'center', width: '15rem', height: '5rem' }}
+          onChange={files => setIconFile(files[0])}
+        />
+        <LoadingCover progress={progress} message='画像を圧縮中' />
+      </ModalBox>
+    )
+  }
+
+  console.log('fff')
 
   return (
     <PageBox>
-      <div style={{ marginBottom: '2rem' }}>
-        <Box row>
-          <Large style={{ marginTop: '0.2rem', backgroundColor: '' }}>{user?.nickName ?? 'ゲスト'}</Large>
-          <EditIcon onClick={handleEditButton} style={{ backgroundColor: '', marginTop: '0.5rem' }} />
-        </Box>
-        <Small>ID: {user ? '@' + user.name : 'なし'}</Small>
-      </div>
+      <Box row style={{ marginBottom: '2rem' }}>
+        <ButtonDiv onClick={() => pushModal('icon', () => <IconModal />)}>
+          <UserIcon userId={session?.id} style={{ width: '3rem', height: '3rem ' }} />
+        </ButtonDiv>
+        <div>
+          <Box row>
+            <Large>{user?.nickName ?? 'ゲスト'}</Large>
+            <EditIcon onClick={handleEditButton} style={{ backgroundColor: '', marginTop: '0.5rem' }} />
+          </Box>
+          <Small>ID: {user ? '@' + user.name : 'なし'}</Small>
+        </div>
+      </Box>
 
-      <ProfileTable style={{marginBottom: '2rem'}}>
+      <ProfileTable style={{ marginBottom: '2rem' }}>
         作成日
         {user ? formatJapaneseDate(user.createdAt) : 'なし'}
         更新日
-        {user ? formatJapaneseDate(user.updatedAt): 'なし'}
+        {user ? formatJapaneseDate(user.updatedAt) : 'なし'}
       </ProfileTable>
 
       <MarkdownBox content={user?.comment ?? ''} />
 
       <Button style={{ alignSelf: 'center', marginTop: '2rem' }} onClick={handleAuth}>
-        {user ? 'ログアウト' : 'サインイン'}
+        {user ? 'ログアウト' : 'ログイン・新規登録'}
       </Button>
       <LoadingCover progress={userLoading !== 'loading' && !sessionLoading} message='ユーザ情報取得中' />
     </PageBox>
@@ -74,7 +131,6 @@ const EditModal = () => {
 
   const [nickName, setNickName] = useState('')
   const [comment, setComment] = useState('')
-  const [status, setStatus] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -82,10 +138,7 @@ const EditModal = () => {
   }, [user])
 
   const handleSubmit = async () => {
-    if (!session || !user) {
-      setStatus('サインインしてください')
-      return
-    }
+    if (!session || !user) return 'ログインしてください'
 
     const res = await fetch(`/api/users/${user.id}`, {
       method: 'PATCH',
@@ -101,17 +154,17 @@ const EditModal = () => {
       mutate?.()
       popModal('editUser')
     } else {
-      setStatus(data.error)
+      return data.error
     }
   }
 
   return (
-    <ModalBox title='ユーザ編集' handleOK={handleSubmit} error={status}>
+    <ModalBox title='ユーザ編集' handleOK={handleSubmit}>
       ニックネーム
       <TextField single value={nickName} onChange={e => setNickName(e)} />
       コメント
       <TextField value={comment} onChange={e => setComment(e)} />
-      <LoadingCover progress={!userLoading} message={'ユーザ情報取得中'} />
+      <LoadingCover progress={userLoading != 'loading'} message={'ユーザ情報取得中'} />
     </ModalBox>
   )
 }

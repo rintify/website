@@ -5,8 +5,9 @@ import styled from '@emotion/styled'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSessionUser } from "@/lib/api"
+import { useSessionUser } from '@/lib/api'
 import ButtonDiv from './ui/TextButton'
+import { UserIcon } from './Components'
 
 export const HeaderMargine = () => {
   return <div style={{ height: '4rem' }} />
@@ -14,9 +15,8 @@ export const HeaderMargine = () => {
 
 const menuItems: { menu: string; link: string }[] = [
   { menu: 'Top', link: '/' },
-  { menu: 'Home', link: '/home' },
   { menu: 'Account', link: '/account' },
-  { menu: 'Delay', link: '/delay' },
+  { menu: 'Storage', link: '/storage' },
 ]
 
 const Header: React.FC = () => {
@@ -27,7 +27,7 @@ const Header: React.FC = () => {
 
   const lastScrollY = useRef(0)
 
-  const {session,sessionLoading} = useSessionUser()
+  const { session, sessionLoading } = useSessionUser()
   const [showHeader, setShowHeader] = useState(true)
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const Header: React.FC = () => {
   }
 
   useEffect(() => {
-    if(!window) return
+    if (!window) return
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       if (currentScrollY <= 1) {
@@ -61,13 +61,12 @@ const Header: React.FC = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [showHeader,isMenuOpen])
+  }, [showHeader, isMenuOpen])
 
   useEffect(() => {
-    if(!window) return
-    if(window.scrollY < 1) setShowHeader(true)
-  }) 
-
+    if (!window) return
+    if (window.scrollY < 1) setShowHeader(true)
+  })
 
   const isDefault = !item || item.link == '/'
 
@@ -79,7 +78,7 @@ const Header: React.FC = () => {
         width: '100%',
         transform: showHeader ? 'translateY(0)' : 'translateY(-4rem)',
         transition: 'transform 0.3s ease-in-out',
-        zIndex: 1000
+        zIndex: 1000,
       }}
     >
       <div
@@ -169,8 +168,8 @@ const Header: React.FC = () => {
               marginRight: 'auto',
             }}
             onClick={e => {
-                setIsMenuOpen(false)
-                router.push(item.link)
+              setIsMenuOpen(false)
+              router.push(item.link)
             }}
           >
             <ButtonDiv>{item.menu}</ButtonDiv>
@@ -239,34 +238,14 @@ const Header: React.FC = () => {
                 minHeight: '0.5rem',
               }}
             >
-              <ButtonDiv onClick={() => router.push('/account')}>{session ? (session.name ?? 'User') : 'Login'}</ButtonDiv>
+              <ButtonDiv onClick={() => router.push('/account')}>
+                {session ? (session.name ?? 'User') : 'Login'}
+              </ButtonDiv>
             </div>
           </div>
 
-          <ButtonDiv
-            onClick={isMenuOpen ? () => router.push('/account') : openMenu}
-            style={{
-              width: '2rem', // サイズを調整
-              height: '2rem',
-              borderRadius: '50%', // 円形にする
-              overflow: 'hidden', // アイコンがボタン外に出ないようにする
-              border: '1px solid #0001', // 必要に応じて枠線を追加
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0.5rem',
-            }}
-          >
-            <img
-              src={session?.icon}
-              alt='menu icon'
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                filter: 'saturate(1)',
-              }}
-            />
+          <ButtonDiv onClick={isMenuOpen ? () => router.push('/account') : openMenu}>
+            <UserIcon userId={session?.id} />
           </ButtonDiv>
         </div>
       </div>

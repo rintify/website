@@ -71,10 +71,10 @@ const wave = keyframes`
   50%, 100% { transform: translateY(0); }     
 `
 
-const Char = styled.span<{ delay: number }>`
+const Char = styled.span<{ $delay: number }>`
   display: inline-block;
   animation: ${wave} 2s ease-in-out infinite;
-  animation-delay: ${({ delay }) => delay}s;
+  animation-delay: ${({ $delay }) => $delay}s;
   `
 
 export const LoadingCover: React.FC<LoadingBarProps> = ({ progress, message }) => {
@@ -86,7 +86,7 @@ export const LoadingCover: React.FC<LoadingBarProps> = ({ progress, message }) =
 
   const text = (message ?? '読込み中') + '..'
   const waveChars = Array.from(text).map((char, i) => (
-    <Char key={i} delay={i * 0.1}>
+    <Char key={i} $delay={i * 0.1}>
       {char}
     </Char>
   ))

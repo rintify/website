@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { safeUploadsPath, requireAuth } from '@/lib/nextauth-server';
 import fs from 'fs';
 import path from 'path';
+import base64url from 'base64url';
+import { fileTypeFromBuffer } from 'file-type';
 
 export async function GET(
   req: NextRequest,
@@ -22,19 +24,16 @@ export async function GET(
     return NextResponse.json([], { status: 200 });
   }
 
-  const files = fs.readdirSync(path);
+  const files = fs.readdirSync(path).map(f => base64url.decode(f));
   return NextResponse.json(files);
 }
 
+
 export async function POST(
   req: NextRequest,
-  { params }: { params: { userId: string; scope: string } }
+  { params }: NextParams
 ) {
-  const { userId, scope } = params;
-
-  if (scope !== 'private') {
-    return NextResponse.json({ error: 'Scope must be private' }, { status: 400 });
-  }
+  const { userId, scope } = await params;
 
   const user = await requireAuth();
   if (!user || user.id !== userId) {
@@ -44,25 +43,53 @@ export async function POST(
   const form = await req.formData();
   const file = form.get('file') as File | null;
   if (!file) {
-    return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-  }
-  const ext = path.extname(file.name).toLowerCase();
-  const ALLOWED = ['.jpg', '.jpeg', '.png', '.gif', '.pdf'];
-  if (!ALLOWED.includes(ext)) {
-    return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
+    return NextResponse.json({ error: 'ファイルを指定してください' }, { status: 400 });
   }
 
-  const { ulid } = await import('ulid');
-  const filename = ulid() + ext;
+  if (file.name.length > 50) {
+    return NextResponse.json(
+      { error: 'ファイル名は50文字以下にしてください' },
+      { status: 400 }
+    );
+  }
 
-  const baseDir = path.join(process.cwd(), 'uploads', userId, 'private');
+  if (!['private', 'icons'].includes(scope)) {
+    return NextResponse.json({ error: '不正なスコープです' }, { status: 400 });
+  }
+
+  const filename = scope === 'icons' ? 'icon.png' : base64url.encode(file.name)
+
+  const baseDir = path.join(process.cwd(), 'uploads', userId, scope);
   await fs.promises.mkdir(baseDir, { recursive: true });
 
   const filepath = path.join(baseDir, filename);
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  await fs.promises.writeFile(filepath, buf);
+  const reader = file.stream().getReader();
+  const MAX = scope === 'icons' ? 100 * 1024 : 10 * 1024 * 1024;
+  let total = 0;
+  const chunks: Uint8Array[] = [];
 
-  const url = `/api/files/${userId}/private/${filename}`;
-  return NextResponse.json({ url });
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX) {
+      reader.cancel();
+      return NextResponse.json(
+        { error: 'ファイルサイズが大きすぎます' },
+        { status: 400 }
+      );
+    }
+    chunks.push(value);
+  }
+
+  const buf = Buffer.concat(chunks.map(u8 => Buffer.from(u8)), total)
+  const type = await fileTypeFromBuffer(buf);
+
+  if (scope === 'icons' && (!type || !type.mime.startsWith('image/'))) {
+    return NextResponse.json({ error: '画像ファイルを指定してください' }, { status: 400 });
+  }
+
+  await fs.promises.writeFile(filepath, buf);
+  return NextResponse.json({ url: 'aaa' });
 }

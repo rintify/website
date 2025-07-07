@@ -9,7 +9,6 @@ type SessionUser = Record<"id"
   | "nickName"
   | "createdAt"
   | "updatedAt"
-  | "icon"
   | "comment", string>
 
 declare module "next-auth" {

@@ -17,17 +17,16 @@ export async function GET(
     }
   }
 
-  const filepath = safeUploadsPath(userId, scope, filename);
+  const filepath = safeUploadsPath(userId, scope, filename)
   if (!filepath) {
-    return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
+    return NextResponse.json({ error: '不正なファイルパスです' }, { status: 400 });
   }
 
   const stat = await fsPromises.stat(filepath);
   const size = stat.size;
   const contentType = mime.lookup(filepath) || 'application/octet-stream';
 
-  const INLINE_THRESHOLD = 512 * 1024; // 512 KB
-  if (size < INLINE_THRESHOLD) {
+  if (size < 2 * 1024 * 1024) {
     const data = await fsPromises.readFile(filepath);
     return new NextResponse(data, {
       status: 200,
@@ -38,22 +37,14 @@ export async function GET(
     });
   }
 
-  const nodeStream = createReadStream(filepath);
-  const webStream = nodeToWeb(nodeStream);
-  return new NextResponse(webStream, {
+  const fileStream = createReadStream(filepath);
+
+  return new NextResponse(fileStream as any, {
     status: 200,
     headers: {
       'Content-Type': contentType,
+      'Content-Length': size.toString(),
     },
   });
 }
 
-function nodeToWeb(nodeStream: NodeJS.ReadableStream): ReadableStream<Uint8Array> {
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      nodeStream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
-      nodeStream.on('end', () => controller.close());
-      nodeStream.on('error', err => controller.error(err));
-    }
-  });
-}

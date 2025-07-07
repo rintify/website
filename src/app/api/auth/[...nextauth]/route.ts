@@ -33,7 +33,6 @@ export const authOptions: NextAuthOptions = {
           nickName:   user.nickName,
           createdAt:  user.createdAt.toISOString(),
           updatedAt:  user.updatedAt.toISOString(),
-          icon: `api/files/${user.id}/profile/icon.png`
         };
       },
     }),
@@ -47,7 +46,6 @@ export const authOptions: NextAuthOptions = {
           nickName:   user.nickName,
           createdAt:  user.createdAt,
           updatedAt:  user.updatedAt,
-          icon: user.icon
         });
       }
       return token;
@@ -59,7 +57,6 @@ export const authOptions: NextAuthOptions = {
         nickName:   token.nickName,
         createdAt:  token.createdAt,
         updatedAt:  token.updatedAt,
-        icon: token.icon
       };
       return session;
     },
