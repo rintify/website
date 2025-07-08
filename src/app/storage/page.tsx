@@ -1,27 +1,38 @@
 'use client'
 
+import AuthModal from '@/components/AuthModal'
+import { UserIcon } from '@/components/Components'
 import { HeaderMargine } from '@/components/Header'
-import Box, { Line, ModalBox, PageBox } from '@/components/ui/Box'
-import { FloatingButton } from '@/components/ui/Button'
+import Box, { FadeDiv, Large, Medium, Line, ModalBox, PageBox, ProfileTable, Small } from '@/components/ui/Box'
+import Button, { FloatingButton } from '@/components/ui/Button'
 import { FileBox, FileFloatingButton } from '@/components/ui/FileBox'
-import { LoadingCover } from '@/components/ui/LoadingBar'
+import { LoadingBar, LoadingCover } from '@/components/ui/LoadingBar'
 import ButtonDiv from '@/components/ui/TextButton'
-import { DragDiv, DropDiv } from '@/hooks/DragContext'
+import { DragDiv, DropDiv, useDragContext } from '@/hooks/DragContext'
 import { useModal } from '@/hooks/ModalContext'
 import { FileIcon, UpIcon } from '@/icons'
-import { uploadFile, useFileContent, useFiles, useSessionUser } from '@/lib/api'
+import { deleteFile, uploadFile, useFileContent, useFiles, useSessionUser } from '@/lib/api'
+import base64url from 'base64url'
+import { useRouter } from 'next/navigation'
 import { useState, useEffect, Fragment } from 'react'
 
 export default function FileViewer() {
   const { session, sessionLoading } = useSessionUser()
   const { files, filesLoading, mutateFiles } = useFiles(session?.id, 'private')
   const [dragFile, setDragFile] = useState<string | undefined>()
-  const {pushModal} = useModal()
+  const { pushModal, popModal } = useModal()
+  const { isDragging } = useDragContext()
+  const { push } = useRouter()
 
   const onChange = async (files: File[]) => {
-    if (!session || !files) return
+    if (!session) {
+      pushModal('auth', () => <AuthModal />)
+      return
+    }
+    if (!files) return
     for (const file of files) {
-      await uploadFile(session.id, 'private', file)
+      const res = await uploadFile(session.id, 'private', file)
+      if (!res.ok) alert(res.error)
     }
     mutateFiles()
   }
@@ -31,16 +42,28 @@ export default function FileViewer() {
       style={{
         width: '100%',
         gap: '2rem',
-        alignItems: 'center'
+        alignItems: 'center',
       }}
     >
       <HeaderMargine />
+      <div style={{ alignSelf: 'flex-start', marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+        <UserIcon userId={session?.id} style={{width: '4rem', height: '4rem'}} />
+        <div>
+          <span style={{ display: 'flex', alignItems: 'baseline' }}>
+            <Medium>{session?.nickName ?? 'ゲスト'}</Medium>さんのストレージ
+          </span>
+          <LoadingBar
+            style={{ marginTop: '0.5rem', width: '15rem' }}
+            progress={files.reduce((s, f) => s + f.size, 0) / (20 * 1024 * 1024)}
+          />
+        </div>
+      </div>
       <DropDiv
         fullDrop
         noborder
         style={{
           maxWidth: '60rem',
-          width: '100%',
+          width: '95%',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(6rem, 6rem))',
           gap: '1rem',
@@ -51,9 +74,9 @@ export default function FileViewer() {
           }
         }}
       >
-        {files.map(file => (
+        {files.length === 0 ? <Small style={{whiteSpace: 'nowrap'}}>ファイルがありません</Small> : files.map(file => (
           <div
-            key={file}
+            key={file.name}
             style={{
               width: '8rem',
               height: '8rem',
@@ -70,18 +93,65 @@ export default function FileViewer() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: file === dragFile ? '2px solid #0070f3' : isOver ? '1px solid #000' : undefined,
+                  transition: 'border-color 0.3s ease, border-width 0.3s ease',
+                  borderColor: dragFile === file.name ? '#f00' : isOver ? '#000' : '#0000',
+                  borderStyle: 'solid',
+                  borderWidth: dragFile === file.name ? '2px' : '1px',
                   borderRadius: '4px',
-                  boxSizing: 'border-box',
-                  transition: 'border 0.2s ease',
                 }
               }}
-              onClick={() => pushModal('a',() => <ModalBox title='aa' handleOK={async () => 'd'}>a</ModalBox>)}
+              onClick={() =>
+                pushModal(file.name, () => (
+                  <ModalBox
+                    title='ファイル詳細'
+                    actions={[
+                      {
+                        on: async ctx => {
+                          ctx.popModal(file.name)
+                          if (session) {
+                            await deleteFile(session.id, 'private', file.name)
+                            mutateFiles()
+                          }
+                        },
+                        text: '削除',
+                      },
+                      {
+                        on: async ctx => {
+                          ctx.popModal(file.name)
+                        },
+                        text: 'OK',
+                      },
+                    ]}
+                  >
+                    <ProfileTable>
+                      ファイル名
+                      {file.name}
+                      サイズ
+                      {`${file.size} バイト`}
+                      URL
+                      <ButtonDiv
+                        line
+                        onClick={() => {
+                          push(`/api/files/${session?.id}/private/${base64url.encode(file.name)}`)
+                        }}
+                      >
+                        {base64url.encode(file.name).substring(0, 15)}...
+                      </ButtonDiv>
+                    </ProfileTable>
+                  </ModalBox>
+                ))
+              }
               onDrop={data => {
-                if (data !== 'delete') setDragFile(undefined)
+                if (data === 'delete') {
+                  if (session) {
+                    deleteFile(session.id, 'private', file.name).then(a => mutateFiles())
+                    return true
+                  }
+                }
+                setDragFile(undefined)
               }}
               onOver={data => {
-                setDragFile(data === 'delete' ? file : undefined)
+                setDragFile(data === 'delete' ? file.name : undefined)
               }}
             >
               <FileIcon style={{ width: '4rem', height: '4rem' }} />
@@ -95,7 +165,9 @@ export default function FileViewer() {
                   wordWrap: 'unset',
                 }}
               >
-                {file.length < 15 ? file : file.substring(0, 8) + '...' + file.substring(file.length - 5)}
+                {file.name.length < 15
+                  ? file.name
+                  : file.name.substring(0, 8) + '...' + file.name.substring(file.name.length - 5)}
               </div>
             </DragDiv>
           </div>
@@ -103,6 +175,15 @@ export default function FileViewer() {
       </DropDiv>
 
       <FileFloatingButton fullDrop style={{ alignSelf: 'flex-start', marginLeft: '20%' }} button onChange={onChange} />
+      <FadeDiv isExist={isDragging}>
+        <DropDiv
+          style={{ width: '10rem', height: '10rem', bottom: '5rem', left: '5rem', position: 'fixed', color: 'red' }}
+          areaStyle={{ backgroundColor: '#f003', borderColor: 'red' }}
+          getData={() => 'delete'}
+        >
+          ファイルを削除
+        </DropDiv>
+      </FadeDiv>
       <LoadingCover expose list={[{ progress: !filesLoading, message: 'ファイル一覧取得中' }]} />
     </Box>
   )

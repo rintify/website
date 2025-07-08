@@ -61,7 +61,7 @@ export const useUser = (userId?: string): {
 export function useFiles(userId: string | undefined, scope: string | undefined) {
   const key = userId && scope && `/api/files/${userId}/${scope}`
 
-  const { data, isLoading, isValidating, error, mutate } = useSWR<string[]>(key, fetcher)
+  const { data, isLoading, isValidating, error, mutate } = useSWR<{name: string, size: number}[]>(key, fetcher)
 
   const filesLoading = loading(userId, isLoading, isValidating, error)
 
@@ -106,4 +106,20 @@ export async function uploadFile(
   const data = await res.json()
   return {ok: res.ok, error: data.error}
 }
+
+export async function deleteFile(
+  userId: string,
+  scope: string,
+  file: string,
+) {
+
+  const res = await fetch(`/api/files/${userId}/${scope}/${file}`, {
+    method: 'DELETE',
+  })
+
+  const data = await res.json()
+  return {ok: res.ok, error: data.error}
+}
+
+
 

@@ -19,12 +19,20 @@ export async function GET(
     }
   }
 
-  const path = safeUploadsPath(userId, scope)
-  if (!path) {
-    return NextResponse.json([], { status: 200 });
+  const uploadsDir = safeUploadsPath(userId, scope)
+  if (!uploadsDir) {
+    return NextResponse.json([], { status: 200 })
   }
 
-  const files = fs.readdirSync(path).map(f => base64url.decode(f));
+  const files = fs.readdirSync(uploadsDir).map(f => {
+    const fileName = base64url.decode(f)
+    const filePath = path.join(uploadsDir, f)
+    const stats = fs.statSync(filePath)
+    return {
+      name: fileName,
+      size: stats.size,
+    }
+  })
   return NextResponse.json(files);
 }
 
@@ -66,7 +74,9 @@ export async function POST(
 
   const reader = file.stream().getReader();
   const MAX = scope === 'icons' ? 100 * 1024 : 10 * 1024 * 1024;
+  const DirMAX = 20 * 1024 * 1024;
   let total = 0;
+  let dirTotal = await getDirectorySize(baseDir);
   const chunks: Uint8Array[] = [];
 
   while (true) {
@@ -77,6 +87,14 @@ export async function POST(
       reader.cancel();
       return NextResponse.json(
         { error: 'ファイルサイズが大きすぎます' },
+        { status: 400 }
+      );
+    }
+    dirTotal += value.byteLength
+    if (dirTotal > DirMAX) {
+      reader.cancel();
+      return NextResponse.json(
+        { error: 'ストレージ上限を超えています' },
         { status: 400 }
       );
     }
@@ -92,4 +110,16 @@ export async function POST(
 
   await fs.promises.writeFile(filepath, buf);
   return NextResponse.json({ url: 'aaa' });
+}
+
+
+async function getDirectorySize(dir: string): Promise<number> {
+  let total = 0;
+  const files = await fs.promises.readdir(dir);
+  await Promise.all(files.map(async file => {
+    const filePath = path.join(dir, file);
+    const stat = await fs.promises.stat(filePath);
+    if (stat.isFile()) total += stat.size;
+  }));
+  return total;
 }

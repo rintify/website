@@ -1,16 +1,16 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, CSSProperties } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 
-const LoadingBar: React.FC<{progress: number | boolean}> = ({ progress }) => {
+export const LoadingBar: React.FC<{progress: number | boolean, style?: CSSProperties}> = ({style, progress }) => {
   const [internalProgress, setInternalProgress] = useState(0)
   const rafRef = useRef<number>(0)
 
   if (progress === true) progress = 1
 
   useEffect(() => {
-    const progressNumber = typeof progress === 'number' ? progress : progress ? 1 : 0
+    const progressNumber = typeof progress === 'number' ? Math.min(progress, 1) : progress ? 1 : 0
     setInternalProgress(progressNumber)
   }, [progress])
 
@@ -45,6 +45,7 @@ const LoadingBar: React.FC<{progress: number | boolean}> = ({ progress }) => {
         border: '1px solid #000',
         display: 'flex',
         alignItems: 'center',
+        ...style
       }}
     >
       <div

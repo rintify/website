@@ -123,7 +123,7 @@ export default function TextField({ password, single, style, value, onChange }: 
             onClick={() => {
               pushModal('full', () => <Modal />)
             }}
-            style={{ width: '1rem', opacity: 0.5, position: 'absolute', bottom: '0.1rem', right: '0.5rem' }}
+            style={{ width: '1rem', opacity: 0.5, position: 'absolute', bottom: '0.5rem', right: '0.5rem' }}
           />
         </>
       )}

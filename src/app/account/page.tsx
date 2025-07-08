@@ -50,7 +50,7 @@ export default function HomePage() {
     return (
       <ModalBox
         title='アイコン'
-        handleOK={async () => {
+        actions={async () => {
           if (!session) return 'ログインしてください'
           setProgress(0)
           let res
@@ -95,7 +95,7 @@ export default function HomePage() {
   return (
     <PageBox>
       <Box row style={{ marginBottom: '2rem' }}>
-        <ButtonDiv onClick={() => pushModal('icon', () => <IconModal />)}>
+        <ButtonDiv scaleRatio={0.5} onClick={() => pushModal('icon', () => <IconModal />)}>
           <UserIcon userId={session?.id} style={{ width: '6rem', height: '6rem ' }} />
         </ButtonDiv>
         <div>
@@ -159,7 +159,7 @@ const EditModal = () => {
   }
 
   return (
-    <ModalBox title='ユーザ編集' handleOK={handleSubmit}>
+    <ModalBox title='ユーザ編集' actions={handleSubmit}>
       ニックネーム
       <TextField single value={nickName} onChange={e => setNickName(e)} />
       コメント

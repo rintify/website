@@ -1,10 +1,11 @@
 // app/components/Box.tsx
 'use client'
-import React, { CSSProperties, FC, HTMLAttributes, JSX, ReactNode, useState } from 'react'
+import React, { CSSProperties, FC, HTMLAttributes, HTMLProps, JSX, ReactNode, useState } from 'react'
 import styled from 'styled-components'
 import Button from './Button'
 import { useModal } from '@/hooks/ModalContext'
 import { useSpring, animated } from '@react-spring/web'
+import { AnimatePresence, HTMLMotionProps, motion } from 'framer-motion'
 
 type BoxProps = {
   row?: boolean
@@ -36,7 +37,7 @@ export const Large = styled.div`
 `
 
 export const Medium = styled.div`
-  font-size: 1rem;
+  font-size: 1.3rem;
   color: #000;
   line-height: 1.2;
   min-height: 1.2em;
@@ -55,14 +56,18 @@ export const Line = styled.div`
   width: 100%;
 `
 
+type ModalAction = { text: string; on: (ctx: ReturnType<typeof useModal>) => Promise<void | string> }
 export const ModalBox: React.FC<{
   children: ReactNode
   style?: CSSProperties
   title: ReactNode
-  handleOK: () => Promise<void | string>
-}> = ({ handleOK, title, style, children }) => {
+  actions: ModalAction[] | ModalAction | ModalAction['on']
+}> = ({ title, style, children, actions }) => {
   const [error, setError] = useState<string>('')
-  const { shakeModal } = useModal()
+  const ctx = useModal()
+
+  if (typeof actions === 'function') actions = [{ text: 'OK', on: actions }]
+  else if (!Array.isArray(actions)) actions = [actions]
 
   return (
     <Box style={{ width: '20rem', ...style }}>
@@ -73,18 +78,23 @@ export const ModalBox: React.FC<{
         {error ?? ''}
       </Box>
       {children}
-      <Box row style={{ width: '100%', marginTop: '1rem', justifyContent: 'flex-end' }}>
-        <Button
-          onClick={async () => {
-            const res = await handleOK()
-            if (res) {
-              setError(res)
-              shakeModal()
-            }
-          }}
-        >
-          OK
-        </Button>
+      <Box row style={{ width: '100%', marginTop: '1rem', justifyContent: 'flex-end', flexDirection: 'row' }}>
+        {actions.map((a, i) => {
+          return (
+            <Button
+              key={i}
+              onClick={async () => {
+                const res = await a.on(ctx)
+                if (res) {
+                  setError(res)
+                  ctx.shakeModal()
+                }
+              }}
+            >
+              {a.text}
+            </Button>
+          )
+        })}
       </Box>
     </Box>
   )
@@ -152,5 +162,29 @@ export const ProfileTable = ({ children, style }: ProfileTableProps) => {
         </div>
       ))}
     </div>
+  )
+}
+
+export const FadeDiv = ({
+  isExist,
+  children,
+  ...rest
+}: HTMLMotionProps<'div'> & {
+  isExist: boolean
+}) => {
+  return (
+    <AnimatePresence>
+      {isExist && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          {...rest}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

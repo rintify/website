@@ -41,14 +41,14 @@ export default function AuthModal() {
       password,
     })
     if (signInRes?.error) {
-      return '認証に失敗しました。名前またはパスワードを確認してください。'
+      return '名前またはパスワードが間違っています'
     } else {
       popModal('auth')
     }
   }
 
   return (
-    <ModalBox title='ログイン・新規登録' handleOK={handleSubmit}>
+    <ModalBox title='ログイン・新規登録' actions={handleSubmit}>
       ユーザ ID
       <TextField single value={name} onChange={e => setName(e)} />
       パスワード

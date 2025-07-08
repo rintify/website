@@ -11,6 +11,7 @@ import ButtonDiv from '@/components/ui/TextButton'
 
 type IconProps = {
   style?: CSSProperties
+  iconStyle?: CSSProperties
   stroke?: string
   strokeWidth?: number
   onClick?: () => void
@@ -19,25 +20,28 @@ type IconProps = {
 const createIcon = (SvgComponent: FC<React.SVGProps<SVGSVGElement>>) => {
   const Icon: FC<IconProps> = ({
     style,
+    iconStyle,
     stroke = '#000',
     strokeWidth = 1,
     onClick,
   }) => {
-    const svgElement = (
-      <SvgComponent
-        width="1.5rem"
-        stroke={stroke}
-        strokeWidth={`${strokeWidth * 2}rem`}
-        style={{ userSelect: 'none', ...style }}
-      />
-    )
 
     return onClick ? (
-      <ButtonDiv onClick={onClick} style={{ userSelect: 'none', display: 'flex', alignItems: 'center' }}>
-        {svgElement}
+      <ButtonDiv onClick={onClick} style={{width: '1.5rem',userSelect: 'none', display: 'flex', alignItems: 'center', ...style }}>
+        <SvgComponent
+        width='100%'
+        stroke={stroke}
+        strokeWidth={`${strokeWidth * 2}rem`}
+        style={{ userSelect: 'none', ...iconStyle }}
+      />
       </ButtonDiv>
     ) : (
-      svgElement
+      <SvgComponent
+        width='1.5rem'
+        stroke={stroke}
+        strokeWidth={`${strokeWidth * 2}rem`}
+        style={{ userSelect: 'none', ...(style ?? iconStyle) }}
+      />
     )
   }
 

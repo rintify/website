@@ -81,7 +81,7 @@ export const FileBox = createFileIx(({ button, fullDrop, files, onChange, style,
           <B>
             <UpIcon
               stroke={button ? '#fff' : '#000'}
-              style={{ width: '1.1rem', marginRight: '0.2rem', alignSelf: 'end' }}
+              style={{ width: '1.2rem', marginRight: '0.2rem', alignSelf: 'end' }}
             />
             ファイル追加
           </B>

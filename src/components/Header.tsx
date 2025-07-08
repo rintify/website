@@ -15,8 +15,9 @@ export const HeaderMargine = () => {
 
 const menuItems: { menu: string; link: string }[] = [
   { menu: 'Top', link: '/' },
-  { menu: 'Account', link: '/account' },
+  { menu: 'Craft', link: '/craft' },
   { menu: 'Storage', link: '/storage' },
+  { menu: 'Account', link: '/account' },
 ]
 
 const Header: React.FC = () => {
@@ -150,11 +151,11 @@ const Header: React.FC = () => {
           height: '100vh',
           background: '#fff',
           borderLeft: '1px solid #fff0',
-          boxShadow: '-5px 0px 15px rgba(0, 0, 0, 0.1)',
+          boxShadow: isMenuOpen ? '-5px 0px 15px rgba(0, 0, 0, 0.1)' : '-5px 0px 15px rgba(0, 0, 0, 0)',
           paddingLeft: '0.2rem',
           paddingTop: '4rem',
           paddingRight: '0.8rem',
-          transition: 'right 300ms ease',
+          transition: 'right 300ms ease, box-shadow 500ms cubic-bezier(0.1, 0.8, 1, 1)',
         }}
       >
         {menuItems.map((item, index) => (
