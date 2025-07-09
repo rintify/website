@@ -1,11 +1,13 @@
-import React, { CSSProperties, FC } from 'react'
+import React, { CSSProperties, FC, HTMLAttributes, ReactElement, Ref, RefAttributes } from 'react'
 
 import EditSvg from './edit.svg'
+import ZoomSvg from './zoom.svg'
 import ScaleSvg from './scale.svg'
 import UserSvg from './user.svg'
 import FileSvg from './file.svg'
 import CrossSvg from './cross.svg'
 import UpSvg from './up.svg'
+import LoosSvg from './loos.svg'
 
 import ButtonDiv from '@/components/ui/TextButton'
 
@@ -15,6 +17,7 @@ type IconProps = {
   stroke?: string
   strokeWidth?: number
   onClick?: () => void
+  ref?: React.RefObject<SVGSVGElement & HTMLDivElement|null>
 }
 
 const createIcon = (SvgComponent: FC<React.SVGProps<SVGSVGElement>>) => {
@@ -24,10 +27,11 @@ const createIcon = (SvgComponent: FC<React.SVGProps<SVGSVGElement>>) => {
     stroke = '#000',
     strokeWidth = 1,
     onClick,
+    ...rest
   }) => {
 
     return onClick ? (
-      <ButtonDiv onClick={onClick} style={{width: '1.5rem',userSelect: 'none', display: 'flex', alignItems: 'center', ...style }}>
+      <ButtonDiv onClick={onClick} style={{width: '1.5rem',userSelect: 'none', display: 'flex', alignItems: 'center', ...style }} {...rest}>
         <SvgComponent
         width='100%'
         stroke={stroke}
@@ -41,6 +45,7 @@ const createIcon = (SvgComponent: FC<React.SVGProps<SVGSVGElement>>) => {
         stroke={stroke}
         strokeWidth={`${strokeWidth * 2}rem`}
         style={{ userSelect: 'none', ...(style ?? iconStyle) }}
+        {...rest}
       />
     )
   }
@@ -49,6 +54,8 @@ const createIcon = (SvgComponent: FC<React.SVGProps<SVGSVGElement>>) => {
 }
 
 export const EditIcon  = createIcon(EditSvg)
+export const ZoomIcon  = createIcon(ZoomSvg)
+export const LoosIcon  = createIcon(LoosSvg)
 export const ScaleIcon = createIcon(ScaleSvg)
 export const UserIcon  = createIcon(UserSvg)
 export const FileIcon  = createIcon(FileSvg)

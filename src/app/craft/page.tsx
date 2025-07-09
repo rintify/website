@@ -1,13 +1,18 @@
 // components/SampleContext.tsx
 'use client'
 import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
-import { Craft } from './scene'
+import { Craft } from './lib/craft'
 import Button from '@/components/ui/Button'
 import { useModal } from '@/hooks/ModalContext'
 import * as THREE from 'three'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { makeCubeMesh, unfold } from './flatten'
-import  PolygonSVG, { flatten, to2D } from './flattenSVG'
+import { unfold } from './flatten/flatten'
+import {PolygonSVG} from './flatten/draw'
+import { flatten } from './flatten/flatten'
+import { toCraftyMesh } from './flatten/utils'
+import Joystick from './compo/joystick'
+import { moveCenter, moveOrbit } from './lib/camera'
+import { Loupe } from './compo/loupe'
 
 type CraftContextType = {
   craft?: Craft
@@ -47,16 +52,12 @@ const ThreeScene = () => {
   }, [])
 
   function handleClick() {
+    if(!craft.current) return
 
-    const g = makeCubeMesh(50)
-
+    const g = toCraftyMesh(craft.current.geometry)
     const a = unfold(g.verts, g.tris)
-    console.log('v',g.verts,'t',g.tris, 'p',a.polys)
     const d = flatten(g.verts,a)
-     console.log(a.forest)
-    console.log(d)
     
-
     pushModal('c', () => {
       return (
         <div style={{ width: '80vw', height: '80vh' }}>
@@ -71,6 +72,17 @@ const ThreeScene = () => {
       <CraftContext.Provider value={{ craft: craft.current }}>
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
           <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+          <Joystick onFrame={(dir, deltaTime) => {
+            if(!craft.current || !dir) return
+            const camera = craft.current.camera
+            moveOrbit(camera.position, camera.quaternion,craft.current.center,new THREE.Vector3(0,1,0),dir,0.5,deltaTime)
+            craft.current.render()
+          }}/>
+          <Loupe style={{right: '3rem', bottom: '4rem'}} onFrame={(dir, deltaTime) => {
+            if(!craft.current) return
+            moveCenter(craft.current.camera.position, craft.current.center, Math.pow(2,dir), deltaTime)
+            craft.current.render()
+          }}/>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100 }}>
             <div
               style={{
