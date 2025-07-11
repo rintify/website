@@ -52,6 +52,8 @@
     "swr": "^2.3.3",
     "tanstack": "^1.0.0",
     "three": "^0.178.0",
+    "three-bvh-csg": "^0.0.17",
+    "three-mesh-bvh": "^0.9.1",
     "ulid": "^3.0.1",
     "webpack": "^5.99.9"
   },

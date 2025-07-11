@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Basis } from './world'
+import { Basis } from './coordinate'
 
 export function createColoredGrid(
   scale: number,
@@ -43,8 +43,8 @@ export function createColoredGrid(
 
   for (let i = 0; i <= lineCount; i++) {
     const v = i * scale - halfSize
-    const vs = i%2==0? vertices2 : vertices3
-    const cs = i%2==0? colors2 : colors3
+    const vs = i % 2 == 0 ? vertices2 : vertices3
+    const cs = i % 2 == 0 ? colors2 : colors3
 
     vs.push(-halfSize, v, 0, halfSize, v, 0)
     vs.push(v, -halfSize, 0, v, halfSize, 0)
@@ -81,6 +81,22 @@ export function createColoredGrid(
   )
 
   return gridGroup
+}
+
+export function createPoint() {
+  const pointPosition = new Float32Array([0, 0, 0])
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(pointPosition, 3))
+
+  const material = new THREE.PointsMaterial({
+    color: 0xff00ff,
+    size: 0.1,
+  })
+
+  const point = new THREE.Points(geometry, material)
+
+  return point
 }
 
 export function alignGrid(grid: THREE.Group, basis: Basis) {

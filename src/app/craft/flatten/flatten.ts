@@ -1,13 +1,14 @@
 import * as THREE from 'three'
-import { UnfoldedTree, createEdgeKey, makePairs, signedArea } from './utils';
+import { Unfolded, UnfoldedTree, createEdgeKey, makePairs, signedArea } from './utils';
 import { PolygonSVG } from './draw';
 
-export function flatten(vertices: THREE.Vector3[], { polys, forest, adjs }: ReturnType<typeof unfold>) {
+export function flatten(vertices: THREE.Vector3[], { polys, forest, adjs }: ReturnType<typeof unfold>): Unfolded {
   const pointss: THREE.Vector2[][][] = []
   for (const f of forest) {
     const points: THREE.Vector2[][] = []
     pointss.push(points)
-    visit(new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), f)
+    const len = vertices[polys[f.pi].indexOf(f.a)].distanceTo(vertices[polys[f.pi].indexOf(f.b)])
+    visit(new THREE.Vector2(0, 0), new THREE.Vector2(len, 0), f)
 
     function visit(a: THREE.Vector2, b: THREE.Vector2, tree: UnfoldedTree) {
       const poly = polys[tree.pi]

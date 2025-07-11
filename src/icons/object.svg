@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1000.00" height="1000.00" viewBox="0.00 0.00 1000.00 1000.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g stroke-linecap="round" id="レイヤー_1">
+<path d="M490.90,34.45 L896.97,268.97 L896.97,738.38 L490.90,972.80 L84.83,738.38 L84.83,268.97 L490.90,34.45 Z" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.39" stroke-opacity="1.00" stroke-linejoin="miter"/>
+<path d="M84.67,270.03 L492.05,506.51" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.39" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M494.26,504.73 L896.34,270.26" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.39" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M492.03,504.24 L492.03,973.66" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.39" stroke-opacity="1.00" stroke-linejoin="round"/>
+</g>
+</svg>

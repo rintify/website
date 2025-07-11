@@ -1,4 +1,4 @@
-import { isDragging } from 'framer-motion'
+
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { Vector2 } from 'three'
 
@@ -11,14 +11,14 @@ const Joystick: React.FC<Props> = ({ onFrame }) => {
   const knobRef = useRef<HTMLDivElement>(null)
 
   const [dragging, setDragging] = useState(false)
-  const directionRef = useRef<Vector2 | undefined>(undefined)
+  const directionRef = useRef<Vector2>(undefined)
   const rafRef = useRef<number>(0)
   const prevTimeRef = useRef<number>(0)
 
   const animate = useCallback(
     (time: number) => {
       if (!dragging) return
-      const deltaTime = (time - prevTimeRef.current) / 1000 // 秒単位
+      const deltaTime = (time - prevTimeRef.current) / 1000
       prevTimeRef.current = time
       onFrame(directionRef.current, deltaTime)
       rafRef.current = requestAnimationFrame(animate)
@@ -97,6 +97,7 @@ const Joystick: React.FC<Props> = ({ onFrame }) => {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
       onPointerCancel={onPointerUp}
     >
       <div

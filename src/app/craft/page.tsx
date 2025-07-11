@@ -1,18 +1,21 @@
 // components/SampleContext.tsx
 'use client'
-import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react'
 import { Craft } from './lib/craft'
 import Button from '@/components/ui/Button'
 import { useModal } from '@/hooks/ModalContext'
 import * as THREE from 'three'
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { unfold } from './flatten/flatten'
-import {PolygonSVG} from './flatten/draw'
+import { PolygonSVG } from './flatten/draw'
 import { flatten } from './flatten/flatten'
-import { toCraftyMesh } from './flatten/utils'
+import { toCraftyMesh, Unfolded } from './flatten/utils'
 import Joystick from './compo/joystick'
 import { moveCenter, moveOrbit } from './lib/camera'
-import { Loupe } from './compo/loupe'
+import { Loupe, PopButton } from './compo/loupe'
+import { BasisIcon, ObjectIcon } from '@/icons'
+import { deselect, lookSelected, putObject, selectByPointer, setBasis } from './lib/operate'
+import ButtonDiv from '@/components/ui/TextButton'
 
 type CraftContextType = {
   craft?: Craft
@@ -28,6 +31,28 @@ const ThreeScene = () => {
   const mountRef = useRef<HTMLDivElement>(null)
   const craft = useRef<Craft | undefined>(undefined)
   const { pushModal } = useModal()
+  const [animations, setAnimations] = useState<((deltaTime: number) => boolean)[]>([])
+  const animationRef = useRef<number>(0)
+  const lastTime = useRef(performance.now())
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+
+  const animate = useCallback(() => {
+    const deltaTime = (performance.now() - lastTime.current) / 1000
+    lastTime.current = performance.now()
+    const res = animations.filter(a => !a(deltaTime))
+    animations.splice(0, animations.length, ...res)
+    craft.current?.render()
+    if (animations.length >= 1) {
+      animationRef.current = requestAnimationFrame(animate)
+    }
+  }, [animations])
+
+  useEffect(() => {
+    lastTime.current = performance.now()
+    cancelAnimationFrame(animationRef.current)
+    if (animations.length >= 1) animationRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationRef.current)
+  }, [animations])
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -47,21 +72,28 @@ const ThreeScene = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (craft.current) mountRef.current?.removeChild(craft.current.renderer.domElement)
+      if (craft.current) {
+        craft.current.dispose()
+        mountRef.current?.removeChild(craft.current.renderer.domElement)
+      }
     }
   }, [])
 
   function handleClick() {
-    if(!craft.current) return
+    if (!craft.current) return
 
-    const g = toCraftyMesh(craft.current.geometry)
-    const a = unfold(g.verts, g.tris)
-    const d = flatten(g.verts,a)
-    
+    const df: Unfolded = []
+    craft.current.workObjects.forEach(o => {
+      const g = toCraftyMesh(o.mesh.geometry)
+      const a = unfold(g.verts, g.tris)
+      const d = flatten(g.verts, a)
+      df.push(...d)
+    })
+
     pushModal('c', () => {
       return (
         <div style={{ width: '80vw', height: '80vh' }}>
-          <PolygonSVG  polygons={d}></PolygonSVG>
+          <PolygonSVG polygons={df}></PolygonSVG>
         </div>
       )
     })
@@ -71,38 +103,104 @@ const ThreeScene = () => {
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <CraftContext.Provider value={{ craft: craft.current }}>
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-          <div ref={mountRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-          <Joystick onFrame={(dir, deltaTime) => {
-            if(!craft.current || !dir) return
-            const camera = craft.current.camera
-            moveOrbit(camera.position, camera.quaternion,craft.current.center,new THREE.Vector3(0,1,0),dir,0.5,deltaTime)
-            craft.current.render()
-          }}/>
-          <Loupe style={{right: '3rem', bottom: '4rem'}} onFrame={(dir, deltaTime) => {
-            if(!craft.current) return
-            moveCenter(craft.current.camera.position, craft.current.center, Math.pow(2,dir), deltaTime)
-            craft.current.render()
-          }}/>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100 }}>
-            <div
-              style={{
-                padding: '0.5rem',
-                gap: '0.5rem',
-                position: 'absolute',
-                bottom: '1rem',
-                right: '1rem',
-                width: '15rem',
-                height: '20rem',
-                backgroundColor: '#fff8',
-                border: '1px solid #000',
-                display: 'flex',
-                flexDirection: 'column',
+          <div
+            ref={mountRef}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            onClick={e => {
+              selectByPointer(
+                craft.current,
+                new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1)
+              )
+              forceUpdate()
+            }}
+          />
+          <Joystick
+            onFrame={(dir, deltaTime) => {
+              if (!craft.current || !dir) return
+              const camera = craft.current.camera
+              moveOrbit(
+                camera.position,
+                camera.quaternion,
+                craft.current.center,
+                new THREE.Vector3(0, 1, 0),
+                dir,
+                0.5,
+                deltaTime
+              )
+              craft.current.render()
+            }}
+          />
+          <Loupe
+            style={{ right: '1.8rem', bottom: '4rem' }}
+            onFrame={(dir, deltaTime) => {
+              if (!craft.current) return
+              moveCenter(craft.current.camera.position, craft.current.center, Math.pow(2, dir), deltaTime)
+              craft.current.render()
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              alignItems: 'flex-end',
+              right: '5rem',
+              bottom: '1rem',
+              width: '10rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}
+          >
+            <PopButton
+              isExist={craft.current?.pointer.visible}
+              onClick={() => {
+                deselect(craft.current)
+                forceUpdate()
               }}
             >
-              <Button style={{ width: '5rem' }} onClick={handleClick}>
-                展開図
-              </Button>
-            </div>
+              選択解除
+            </PopButton>
+            <PopButton
+              isExist={craft.current?.pointer.visible}
+              onClick={() => {
+                setBasis(craft.current)
+              }}
+            >
+              基底にする
+            </PopButton>
+            <PopButton
+              isExist={craft.current?.pointer.visible}
+              onClick={() => {
+                const res = lookSelected(craft.current)
+                if (res) setAnimations(p => [...p, res])
+              }}
+            >
+              見る
+            </PopButton>
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              right: '2rem',
+              bottom: '12rem',
+              width: '2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}
+          >
+            <ObjectIcon style={{ opacity: 0.3, width: '2rem' }} onClick={handleClick} />
+            <ObjectIcon
+              style={{ opacity: 0.3, width: '2rem' }}
+              onClick={() => {
+                putObject(craft.current)
+              }}
+            />
+            <BasisIcon
+              style={{ opacity: 0.3, width: '2rem' }}
+              onClick={() => {
+                putObject(craft.current)
+              }}
+            />
           </div>
         </div>
       </CraftContext.Provider>

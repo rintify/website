@@ -8,7 +8,8 @@ import FileSvg from './file.svg'
 import CrossSvg from './cross.svg'
 import UpSvg from './up.svg'
 import LoosSvg from './loos.svg'
-
+import ObjectSvg from './object.svg'
+import BasisSvg from './basis.svg'
 import ButtonDiv from '@/components/ui/TextButton'
 
 type IconProps = {
@@ -61,3 +62,5 @@ export const UserIcon  = createIcon(UserSvg)
 export const FileIcon  = createIcon(FileSvg)
 export const UpIcon    = createIcon(UpSvg)
 export const CrossIcon = createIcon(CrossSvg)
+export const ObjectIcon = createIcon(ObjectSvg)
+export const BasisIcon = createIcon(BasisSvg)

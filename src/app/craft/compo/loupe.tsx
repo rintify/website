@@ -1,5 +1,7 @@
+import Button from '@/components/ui/Button'
+import ButtonDiv from '@/components/ui/TextButton'
 import { LoosIcon, ZoomIcon } from '@/icons'
-import { isDragging } from 'framer-motion'
+import { AnimatePresence, HTMLMotionProps, isDragging, motion } from 'framer-motion'
 import React, { useRef, useState, useCallback, useEffect, CSSProperties } from 'react'
 import { Vector2 } from 'three'
 
@@ -37,14 +39,13 @@ export const Loupe: React.FC<Props> = ({ style, onFrame }) => {
     const offsetY = (rect.height - crect.height) / 2
     const offsetX = (rect.width - crect.width) / 2
     knobRef.current.style.transform = `translate(${offsetX.toFixed(1)}px, ${(delta + offsetY).toFixed(1)}px)`
-    if(zoomRef.current) zoomRef.current.style.transform = delta > 0 ? `scale(1.2)` : `scale(1)`
-    if(loosRef.current) loosRef.current.style.transform = delta < 0 ? `scale(1.2)` : `scale(1)`
+    if (zoomRef.current) zoomRef.current.style.transform = delta > 0 ? `scale(1.2)` : `scale(1)`
+    if (loosRef.current) loosRef.current.style.transform = delta < 0 ? `scale(1.2)` : `scale(1)`
   }
 
   useEffect(() => {
     setNob()
   }, [])
-
 
   useEffect(() => {
     if (dragging) {
@@ -101,11 +102,12 @@ export const Loupe: React.FC<Props> = ({ style, onFrame }) => {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
       onPointerCancel={onPointerUp}
     >
       <ZoomIcon
         style={{
-          left: '5%',
+          left: '20%',
           top: '-2rem',
           position: 'absolute',
           transform: `translate(0,0)`,
@@ -129,7 +131,7 @@ export const Loupe: React.FC<Props> = ({ style, onFrame }) => {
       />
       <LoosIcon
         style={{
-          left: '30%',
+          left: '20%',
           bottom: '-2rem',
           position: 'absolute',
           transform: `translate(0,0)`,
@@ -138,5 +140,33 @@ export const Loupe: React.FC<Props> = ({ style, onFrame }) => {
         strokeWidth={3}
       ></LoosIcon>
     </div>
+  )
+}
+
+
+export function PopButton({ isExist, style, ...rest }: Parameters<typeof ButtonDiv>[0] & { isExist: boolean | undefined }) {
+  return (
+    <AnimatePresence>
+      {isExist && (
+        <motion.div
+          initial={{ height: 0 , scaleY: 0}}
+          animate={{ height: '1.6em' , scaleY: 1}}
+          exit={{ height: 0 , scaleY: 0}}
+          transition={{ duration: 0.3 }}
+        >
+          <ButtonDiv
+            style={{
+              border: '1px solid #000',
+              opacity: '0.5',
+              padding: '0.2em 0.5em',
+              lineHeight: 1.2,
+              borderRadius: '0.8em',
+              ...style,
+            }}
+            {...rest}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
