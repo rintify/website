@@ -149,9 +149,9 @@ export function PopButton({ isExist, style, ...rest }: Parameters<typeof ButtonD
     <AnimatePresence>
       {isExist && (
         <motion.div
-          initial={{ height: 0 , scaleY: 0}}
-          animate={{ height: '1.6em' , scaleY: 1}}
-          exit={{ height: 0 , scaleY: 0}}
+          initial={{ height: 0 , opacity: 0}}
+          animate={{ height: '1.6em' , opacity: 1}}
+          exit={{ height: 0 , opacity: 0}}
           transition={{ duration: 0.3 }}
         >
           <ButtonDiv

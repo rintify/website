@@ -1,179 +1,120 @@
-import { Matrix4, Mesh, Plane, Vector2, Vector3 } from 'three'
+import { EdgesGeometry, Matrix4, Mesh, Plane, Points, Quaternion, Vector2, Vector3 } from 'three'
 import { Brush, Evaluator, SUBTRACTION, INTERSECTION, REVERSE_SUBTRACTION } from 'three-bvh-csg'
-import { Craft } from './craft'
+import { Craft, WorkObject, WorkPosition } from './craft'
 import { alignGrid, createPyramid } from './object'
 import { look } from './camera'
+import { unescape } from 'querystring'
 
-type OnFrame = (deltaTime: number) => boolean
+export type CraftAnimate = (deltaTime: number) => boolean | void
 
 export function putObject(craft?: Craft) {
   if (!craft) return
   craft.camera.position
   const geometry = createPyramid(4, 5, 5)
-  const res = craft.addGeometry(geometry, true)
-  res.position.copy(new Vector3(0, 0, -10).applyQuaternion(craft.camera.quaternion).add(craft.camera.position))
+  const w = new WorkObject(craft, geometry)
+  w.position.copy(new Vector3(0, 0, -10).applyQuaternion(craft.camera.quaternion).add(craft.camera.position))
   craft.render()
 }
 
 export function deleteObject(craft?: Craft) {
   if (!craft) return
-  const ss = new Set(craft.selectedObjects)
-  craft.selectedObjects.forEach(o => craft.disposeWorkObject(o, false))
-  craft.selectedObjects = []
-  craft.workObjects = craft.workObjects.filter(o => !ss.has(o))
-  craft.notifySelected()
+  craft.disposeWorkObject(...craft.selectedPositions.map(a => a.o).filter(a => !!a))
   craft.render()
 }
 
-export function setBasis(craft: Craft | undefined) {
+export function setBasis(craft: Craft | undefined): CraftAnimate | undefined {
   if (!craft) return
-  if (craft.pointer.visible) {
-    craft.basis.o = craft.pointer.position
-    alignGrid(craft.grid, craft.basis)
-    craft.render()
+  if (craft.selectedPositions.length >= 1) {
+    craft.basis.o.copy(craft.selectedPositions[0].position)
+    return dt => {
+      craft.grid.position.lerp(craft.basis.o, 5 * dt)
+      if (craft.basis.o.distanceToSquared(craft.grid.position) < 0.001) {
+        craft.grid.position.copy(craft.basis.o)
+        return true
+      }
+    }
+  }
+}
+
+export function rotateBasis(craft: Craft | undefined): CraftAnimate | undefined {
+  if (!craft) return
+  ;[craft.basis.x, craft.basis.y, craft.basis.z] = [craft.basis.z, craft.basis.x, craft.basis.y]
+  return dt => {
+    const quaternion = new Quaternion().setFromRotationMatrix(
+      new Matrix4().makeBasis(craft.basis.x, craft.basis.y, craft.basis.z)
+    )
+    craft.grid.quaternion.slerp(quaternion, 5 * dt)
+    if (Math.abs(craft.grid.quaternion.dot(quaternion)) > 0.999999) {
+      craft.grid.quaternion.copy(quaternion)
+      return true
+    }
   }
 }
 
 export function deselect(craft: Craft | undefined) {
   if (!craft) return
-  craft.pointer.visible = false
-  craft.selectedObjects = []
-  craft.notifySelected()
+  craft.selectedPositions.forEach(p => p.dispose(craft))
+  craft.selectedPositions = []
+  craft.updateSelected()
+  craft.render()
 }
 
-export function lookSelected(craft: Craft | undefined): OnFrame | undefined {
+export function lookSelected(craft: Craft | undefined): CraftAnimate | undefined {
   if (!craft) return
+  const av =
+    craft.selectedPositions.length === 0
+      ? craft.basis.o
+      : craft.selectedPositions
+          .reduce((s, o) => s.add(o.position), new Vector3())
+          .multiplyScalar(1 / craft.selectedPositions.length)
+  craft.center.copy(av)
+  craft.up.copy(craft.basis.z)
   return dt => {
-    craft.center.lerp(craft.pointer.position, 5 * dt)
-    look(craft.camera.position, craft.camera.quaternion, craft.center, new Vector3(0, 1, 0))
-    return craft.center.distanceToSquared(craft.pointer.position) < 0.1
+    const quaternion = new Quaternion().setFromRotationMatrix(
+      new Matrix4().lookAt(craft.camera.position, craft.center, craft.up)
+    )
+    craft.camera.quaternion.slerp(quaternion, 5 * dt)
+    if (Math.abs(craft.camera.quaternion.dot(quaternion)) > 0.999999) {
+      craft.camera.quaternion.copy(quaternion)
+      return true
+    }
   }
 }
 
-export function selectByPointer(craft: Craft | undefined, pointer: Vector2): OnFrame | undefined {
+export function selectByPointer(craft: Craft | undefined, pointer: Vector2): CraftAnimate | undefined {
   if (!craft) return
-  const targets = craft.workObjects.map(s => s.mesh)
   craft.raycaster.setFromCamera(pointer, craft.camera)
+  craft.raycaster.params.Points.threshold = 0.1
 
-  if (craft.pointerMode === 'pointer') {
+  const hits = craft.raycaster.intersectObjects(
+    craft.workObjects.map(s => s.points),
+    false
+  )
+  if (hits.length === 0) {
     var plane = new Plane()
     plane.setFromNormalAndCoplanarPoint(craft.basis.z, craft.basis.o)
     const intersectPoint = craft.raycaster.ray.intersectPlane(plane, new Vector3())
     if (intersectPoint) {
-      craft.pointer.visible = true
-      craft.pointer.position.copy(intersectPoint)
+      craft.selectedPositions.push(new WorkPosition(craft, undefined, intersectPoint))
+      craft.updateSelected()
       craft.render()
     }
     return
   }
 
-  const hits = craft.raycaster.intersectObjects(targets, false)
-  if (hits.length === 0) return
-
-  const selected = craft.workObjects.find(o => o.mesh === hits[0].object)!
-
-  if (craft.pointerMode === 'object') {
-    if (!craft.selectedObjects.find(o => o === selected)) {
-      craft.selectedObjects.push(selected)
-      craft.notifySelected()
-    } else {
-      craft.selectedObjects = craft.selectedObjects.filter(o => o !== selected)
-      craft.notifySelected()
-    }
-    return
-  }
-
   const hit = hits[0]
-  const hitFaceId = hit.faceIndex!
-  const mesh = hits[0].object as Mesh
-  const geom = mesh.geometry
-  const index = geom.index
-  const position = geom.attributes.position
+  const hitO = hit.object as Points
+  const parent = hitO.parent as WorkObject
 
-  if (craft.pointerMode === 'face') {
-    if (!craft.selectedFaces.find(s => s.faceId === hitFaceId))
-      craft.selectedFaces.push({ faceId: hitFaceId, o: selected })
-  }
+  const index = hit.index!
+  const posAttr = hitO.geometry.getAttribute('position')
+  const x = posAttr.getX(index)
+  const y = posAttr.getY(index)
+  const z = posAttr.getZ(index)
+  const worldVertex = new Vector3(x, y, z)
+  hitO.localToWorld(worldVertex);
 
-  let i0, i1, i2
-  if (index) {
-    const faceIndex = hitFaceId * 3
-    i0 = index.getX(faceIndex)
-    i1 = index.getX(faceIndex + 1)
-    i2 = index.getX(faceIndex + 2)
-  } else {
-    i0 = hitFaceId * 3
-    i1 = i0 + 1
-    i2 = i0 + 2
-  }
-
-  const v0 = new Vector3().fromBufferAttribute(position, i0).applyMatrix4(mesh.matrixWorld)
-  const v1 = new Vector3().fromBufferAttribute(position, i1).applyMatrix4(mesh.matrixWorld)
-  const v2 = new Vector3().fromBufferAttribute(position, i2).applyMatrix4(mesh.matrixWorld)
-
-  const origin = craft.raycaster.ray.origin
-  const d0 = origin.distanceTo(v0)
-  const d1 = origin.distanceTo(v1)
-  const d2 = origin.distanceTo(v2)
-
-  let selectedVertex
-  if (d0 <= d1 && d0 <= d2) selectedVertex = i0
-  else if (d1 <= d2) selectedVertex = i1
-  else selectedVertex = i2
-
-  craft.selectedVertexes.push({ faceId: selectedVertex, o: selected })
-}
-
-export function cutMesh(craft?: Craft) {
-  if (!craft) return
-  const sel = craft.selectedObjects[0]
-  if (!sel?.mesh?.geometry) return
-  let targets = craft.selectedObjects.slice(1)
-  if (targets.length === 0) targets = craft.workObjects
-
-  const meshA = sel.mesh
-
-  // Brush を作成してワールド行列を反映
-  const brushA = new Brush(meshA.geometry)
-  brushA.applyMatrix4(meshA.matrixWorld)
-  brushA.geometry.computeBoundsTree()
-
-  // Evaluator はループの外で一度だけ生成しておく
-  const evaluator = new Evaluator()
-
-  for (const { mesh: meshB } of targets) {
-    if (!meshB.geometry) continue
-
-    // BrushB 準備
-    const brushB = new Brush(meshB.geometry)
-    brushB.applyMatrix4(meshB.matrixWorld)
-    brushB.geometry.computeBoundsTree()
-
-    // 交差判定（A に対する B の変換行列を計算）
-    const geoToBVH = new Matrix4().copy(meshA.matrixWorld).invert().multiply(meshB.matrixWorld)
-
-    const isHit = brushA.geometry.boundsTree!.intersectsGeometry(brushB.geometry, geoToBVH)
-    if (!isHit) continue
-
-    // 1) A − B
-    const brushA_subB = evaluator.evaluate(brushA, brushB, SUBTRACTION)
-    // 2) B − A （REVERSE_SUBTRACTION 定数でも可）
-    const brushB_subA = evaluator.evaluate(brushA, brushB, REVERSE_SUBTRACTION)
-    // 3) A ∩ B
-    const brushA_andB = evaluator.evaluate(brushA, brushB, INTERSECTION)
-
-    // --- 既存メッシュに差し替え ---
-    // A を A−B に
-    meshA.geometry.dispose()
-    meshA.geometry = brushA_subB.geometry
-    meshA.geometry.computeBoundsTree()
-
-    // B を B−A に
-    meshB.geometry.dispose()
-    meshB.geometry = brushB_subA.geometry
-    meshB.geometry.computeBoundsTree()
-
-    // --- 交差部分は新しいメッシュとして追加 ---
-    craft.addGeometry(brushA_andB.geometry, true)
-  }
+  craft.selectedPositions.push(new WorkPosition(craft, parent, worldVertex))
+  craft.updateSelected()
+  craft.render()
 }

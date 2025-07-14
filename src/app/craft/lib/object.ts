@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Basis } from './coordinate'
+import { Basis } from './world'
 
 export function createColoredGrid(
   scale: number,

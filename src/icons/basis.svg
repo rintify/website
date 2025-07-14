@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="1000.00" height="1000.00" viewBox="0.00 0.00 1000.00 1000.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g stroke-linecap="round" id="object">
+<g stroke-linecap="round" id="レイヤー_2">
 <path d="M39.19,872.41 C39.19,872.41 492.35,609.36 492.35,609.36" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="round"/>
 <path d="M494.81,611.34 C494.81,611.34 942.07,872.15 942.07,872.15" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="round"/>
 <path d="M492.33,611.88 C492.33,611.88 492.33,89.72 492.33,89.72" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="round"/>
 <path d="M86.02,732.54 C86.02,732.54 36.67,874.82 36.67,874.82 C36.67,874.82 180.74,894.17 180.74,894.17" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="miter"/>
 <path d="M795.21,892.78 C795.21,892.78 944.48,872.88 944.48,872.88 C944.48,872.88 896.97,735.50 896.97,735.50" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="miter"/>
 <path d="M590.14,203.74 C590.14,203.74 492.12,89.41 492.12,89.41 C492.12,89.41 402.80,204.09 402.80,204.09" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.77" stroke-opacity="1.00" stroke-linejoin="miter"/>
+<path d="M669.07,405.14 L667.56,405.14" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M667.56,148.82 L667.56,148.82" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.00" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M680.43,251.18 C691.03,255.25 700.03,258.97 707.03,262.81 C719.54,269.95 747.56,286.25 761.25,295.57 C770.78,302.41 779.50,309.26 786.85,315.73 C792.75,321.08 802.61,330.99 808.84,337.86 C813.86,343.64 823.50,355.46 828.12,361.50 C832.67,367.63 841.15,380.34 845.23,386.87 C849.19,393.50 856.72,407.08 860.25,414.03 C863.61,421.08 871.11,438.62 872.65,442.85 C874.13,446.95 879.81,465.56 881.89,473.38 C883.83,481.33 887.21,497.17 888.64,504.74 C889.88,512.04 892.12,527.66 892.70,535.24 C893.37,544.35 893.37,556.10 892.93,567.53 C891.97,586.97 889.94,603.22 889.23,608.71" fill="none" stroke="rgb(7, 0, 0)" stroke-width="3.59" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M960.58,559.93 L887.56,613.81 L833.68,540.79" fill="none" stroke="rgb(7, 0, 0)" stroke-width="6.64" stroke-opacity="1.00" stroke-linejoin="round"/>
 </g>
 </svg>

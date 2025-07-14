@@ -3,11 +3,13 @@ import React, { useRef, useEffect } from 'react'
 import {
   AmbientLight,
   BoxGeometry,
+  BufferAttribute,
   BufferGeometry,
   Color,
   ConeGeometry,
   DirectionalLight,
   EdgesGeometry,
+  Float32BufferAttribute,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -19,6 +21,8 @@ import {
   Object3D,
   Object3DEventMap,
   PerspectiveCamera,
+  Points,
+  PointsMaterial,
   Raycaster,
   Scene,
   Vector3,
@@ -27,30 +31,101 @@ import {
 import { alignGrid, createColoredGrid, createPoint, createPyramid } from './object'
 import { computeBoundsTree, acceleratedRaycast, disposeBoundsTree } from 'three-mesh-bvh'
 import { look } from './camera'
-import { Basis, createBasis } from './coordinate'
+import { Basis, createBasis } from './world'
 
-class WorkObject extends Group {
-  constructor(
-    readonly mesh: Mesh,
-    readonly edge: LineSegments
-  ) {
+export class WorkObject extends Group {
+  readonly mesh: Mesh
+  readonly edge: LineSegments
+  readonly points: Points
+
+  constructor(craft: Craft, geometry: BufferGeometry) {
     super()
-    this.mesh = mesh
-    this.edge = edge
+    this.mesh = new Mesh(geometry, craft.material)
+    geometry.computeVertexNormals()
+    geometry.computeBoundsTree()
+
+    const edges = new EdgesGeometry(geometry)
+    this.edge = new LineSegments(edges, craft.lineMaterial)
+
+    const posAttr = edges.getAttribute('position');
+    const uniqueVerts = new Set<string>();
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i).toFixed(5);
+      const y = posAttr.getY(i).toFixed(5);
+      const z = posAttr.getZ(i).toFixed(5);
+      uniqueVerts.add(`${x},${y},${z}`);
+    }
+
+    const cornerPositions = new Float32Array(uniqueVerts.size * 3);
+    let idx = 0;
+    for (let key of uniqueVerts) {
+      const [x, y, z] = key.split(',').map(Number);
+      cornerPositions[idx++] = x;
+      cornerPositions[idx++] = y;
+      cornerPositions[idx++] = z;
+    }
+
+    const ptsGeom = new BufferGeometry();
+    ptsGeom.setAttribute('position', new BufferAttribute(cornerPositions, 3));
+
+    this.points = new Points(ptsGeom, craft.pointMaterial);
+
+    this.add(this.points)
     this.add(this.mesh)
     this.add(this.edge)
+
+    craft.scene.add(this)
+    craft.workObjects.push(this)
+  }
+
+  onSelected(craft: Craft, selected: boolean) {
+    if (selected) {
+      this.mesh.material = craft.sMaterial
+      this.edge.material = craft.sLineMaterial
+    } else {
+      this.mesh.material = craft.material
+      this.edge.material = craft.lineMaterial
+    }
+  }
+
+  dispose(craft: Craft) {
+    craft.scene.remove(this)
+    this.mesh.geometry.dispose()
+    this.edge.geometry.dispose()
   }
 }
 
-type FaceState = {
-  o: WorkObject
-  faceId: number
+export class WorkPosition extends Points {
+  constructor(
+    craft: Craft,
+    readonly o: WorkObject | undefined,
+    pos: Vector3
+  ) {
+    const pointPosition = new Float32Array([0, 0, 0])
+    const geometry = new BufferGeometry()
+    geometry.setAttribute('position', new BufferAttribute(pointPosition, 3))
+
+    super(geometry, craft.pointMaterial)
+    this.o = o
+    craft.scene.add(this)
+    this.position.copy(pos)
+  }
+
+  onSelected(craft: Craft, selected: boolean) {
+    if (selected) {
+      this.material = craft.spointMaterial
+    } else {
+      this.material = craft.pointMaterial
+    }
+  }
+
+  dispose(craft: Craft) {
+    craft.scene.remove(this)
+    this.geometry.dispose()
+  }
 }
 
-type VertexState = {
-  o: WorkObject
-  vertexId: number
-}
+export type Selectable = WorkObject | WorkPosition
 
 export class Craft {
   basis: Basis
@@ -58,18 +133,25 @@ export class Craft {
   readonly camera
   readonly grid
   readonly scene
+
   readonly material = new MeshStandardMaterial({ color: 0xffffff, flatShading: true })
   readonly lineMaterial = new LineBasicMaterial({ color: 0x0a0a0a })
   readonly sMaterial = new MeshBasicMaterial({ color: 0xffee99 })
   readonly sLineMaterial = new LineBasicMaterial({ color: 0xff8800, linewidth: 100 })
+  readonly spointMaterial = new PointsMaterial({
+    color: 0xff00ff,
+    size: 0.1,
+  })
+  readonly pointMaterial = new PointsMaterial({
+    color: 0x000000,
+    size: 0.01,
+  })
+
   readonly center: Vector3
+  readonly up: Vector3 = new Vector3(0, 1, 0)
   workObjects: WorkObject[] = []
-  selectedObjects: WorkObject[] = []
-  readonly selectedFaces: FaceState[] = []
-  readonly selectedVertexes: FaceState[] = []
+  selectedPositions: WorkPosition[] = []
   readonly raycaster: Raycaster
-  pointerMode: 'pointer' | 'vertex' | 'face' | 'object' = 'pointer'
-  readonly pointer
 
   constructor(width: number, height: number) {
     this.renderer = new WebGLRenderer({ antialias: true })
@@ -88,10 +170,6 @@ export class Craft {
 
     this.camera = new PerspectiveCamera(75, width / height, 0.1, 1000)
     this.camera.position.set(0, 4, 10)
-
-    this.pointer = createPoint()
-    this.pointer.visible = false
-    this.scene.add(this.pointer)
 
     const dir1 = new DirectionalLight(0xffffff, 3)
     dir1.position.set(100, 100, 100)
@@ -123,37 +201,24 @@ export class Craft {
     this.renderer.render(this.scene, this.camera)
   }
 
-  addGeometry(geometry: BufferGeometry, isWork: boolean) {
-    const mesh = new Mesh(geometry, this.material)
-    geometry.computeVertexNormals()
-    geometry.computeBoundsTree()
-    const edges = new EdgesGeometry(geometry)
-    const edgeLines = new LineSegments(edges, this.lineMaterial)
-    const o = new WorkObject(mesh, edgeLines)
-    this.scene.add(o)
-    if (isWork) this.workObjects.push(o)
-    return o
-  }
-
-  disposeWorkObject(o: WorkObject, removeWork: boolean) {
-    this.scene.remove(o)
-    o.mesh.geometry.dispose()
-    o.edge.geometry.dispose()
-    if (removeWork) this.workObjects = this.workObjects.filter(oo => oo !== o)
-  }
-
-  notifySelected() {
-    const set = new Set(this.selectedObjects)
-    this.selectedObjects.forEach(o => {
-      if (set.has(o)) {
-        o.mesh.material = this.sMaterial
-        o.edge.material = this.sLineMaterial
-      } else {
-        o.mesh.material = this.material
-        o.edge.material = this.lineMaterial
+  disposeWorkObject(...os: Selectable[]) {
+    const ss = new Set(os)
+    os.forEach(o => {
+      if (o instanceof WorkObject) {
+        o.dispose(this)
       }
     })
-    this.render()
+    this.selectedPositions = this.selectedPositions.filter(o => !ss.has(o))
+    this.updateSelected()
+    this.workObjects = this.workObjects.filter(o => !ss.has(o))
+  }
+
+  updateSelected() {
+    const set = new Set(this.selectedPositions.map(s => s.o))
+    this.workObjects.forEach(o => {
+      o.onSelected(this, set.has(o))
+    })
+    this.selectedPositions.forEach(o => o.onSelected(this, true))
   }
 
   dispose() {

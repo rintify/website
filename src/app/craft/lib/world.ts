@@ -41,7 +41,3 @@ export function createBasis(points: THREE.Vector3[]): Basis | undefined{
     return {o: points[0], x: xAxis,y: yAxis,z: zAxis}
   }
 }
-
-function roateBasis(basis: Basis){
-  [basis.x,basis.y,basis.z] = [basis.z,basis.x,basis.y]
-}

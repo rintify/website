@@ -14,7 +14,7 @@ import Joystick from './compo/joystick'
 import { moveCenter, moveOrbit } from './lib/camera'
 import { Loupe, PopButton } from './compo/loupe'
 import { BasisIcon, ObjectIcon } from '@/icons'
-import { deselect, lookSelected, putObject, selectByPointer, setBasis } from './lib/operate'
+import { CraftAnimate, deleteObject, deselect, lookSelected, putObject, rotateBasis, selectByPointer, setBasis } from './lib/operate'
 import ButtonDiv from '@/components/ui/TextButton'
 
 type CraftContextType = {
@@ -31,7 +31,7 @@ const ThreeScene = () => {
   const mountRef = useRef<HTMLDivElement>(null)
   const craft = useRef<Craft | undefined>(undefined)
   const { pushModal } = useModal()
-  const [animations, setAnimations] = useState<((deltaTime: number) => boolean)[]>([])
+  const [animations, setAnimations] = useState<CraftAnimate[]>([])
   const animationRef = useRef<number>(0)
   const lastTime = useRef(performance.now())
   const [, forceUpdate] = useReducer(x => x + 1, 0);
@@ -122,9 +122,9 @@ const ThreeScene = () => {
                 camera.position,
                 camera.quaternion,
                 craft.current.center,
-                new THREE.Vector3(0, 1, 0),
+                craft.current.up,
                 dir,
-                0.5,
+                0.8,
                 deltaTime
               )
               craft.current.render()
@@ -151,7 +151,7 @@ const ThreeScene = () => {
             }}
           >
             <PopButton
-              isExist={craft.current?.pointer.visible}
+              isExist={craft.current && craft.current.selectedPositions.length >= 1}
               onClick={() => {
                 deselect(craft.current)
                 forceUpdate()
@@ -160,15 +160,25 @@ const ThreeScene = () => {
               選択解除
             </PopButton>
             <PopButton
-              isExist={craft.current?.pointer.visible}
+              isExist={craft.current && craft.current.selectedPositions.length >= 1}
               onClick={() => {
-                setBasis(craft.current)
+                deleteObject(craft.current)
+                forceUpdate()
               }}
             >
-              基底にする
+              削除する
             </PopButton>
             <PopButton
-              isExist={craft.current?.pointer.visible}
+              isExist={craft.current && craft.current.selectedPositions.length >= 1}
+              onClick={() => {
+                const res = setBasis(craft.current) 
+                if(res) setAnimations(p => [...p, res])
+              }}
+            >
+              基底を移動
+            </PopButton>
+            <PopButton
+              isExist={true}
               onClick={() => {
                 const res = lookSelected(craft.current)
                 if (res) setAnimations(p => [...p, res])
@@ -198,7 +208,8 @@ const ThreeScene = () => {
             <BasisIcon
               style={{ opacity: 0.3, width: '2rem' }}
               onClick={() => {
-                putObject(craft.current)
+                const res = rotateBasis(craft.current)
+                if (res) setAnimations(p => [...p, res])
               }}
             />
           </div>
