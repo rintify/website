@@ -1,7 +1,8 @@
 // next.config.ts
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   compiler: {
     styledComponents: true,
   },
@@ -16,9 +17,9 @@ const nextConfig: NextConfig = {
               svgoConfig: {
                 plugins: [
                   { name: 'removeDimensions', active: true },
-                  { 
+                  {
                     name: 'removeAttrs',
-                    params: { attrs: '(stroke-width|stroke)' } 
+                    params: { attrs: '(stroke-width|stroke)' },
                   },
                   {
                     name: 'addAttributesToSVGElement',
@@ -40,8 +41,8 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-   disableStaticImages: true, // importした画像の型定義設定を無効にする
- },
-};
+    disableStaticImages: true, // importした画像の型定義設定を無効にする
+  },
+}
 
-export default nextConfig;
+export default nextConfig

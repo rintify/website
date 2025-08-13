@@ -13,9 +13,10 @@ export const HeaderMargine = () => {
   return <div style={{ height: '4rem' }} />
 }
 
-const menuItems: { menu: string; link: string }[] = [
+const menuItems: { menu: string; link: string; hidden?: boolean }[] = [
   { menu: 'Top', link: '/' },
-  { menu: 'Craft', link: '/craft' },
+  { menu: 'Events', link: '/events', hidden: true },
+  { menu: 'Craft', link: '/craft', hidden: true },
   { menu: 'Storage', link: '/storage' },
   { menu: 'Account', link: '/account' },
 ]
@@ -158,24 +159,26 @@ const Header: React.FC = () => {
           transition: 'right 300ms ease, box-shadow 500ms cubic-bezier(0.1, 0.8, 1, 1)',
         }}
       >
-        {menuItems.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              padding: '10px',
-              color: 'black',
-              width: 'fit-content',
-              marginLeft: 'auto',
-              marginRight: 'auto',
-            }}
-            onClick={e => {
-              setIsMenuOpen(false)
-              router.push(item.link)
-            }}
-          >
-            <ButtonDiv>{item.menu}</ButtonDiv>
-          </div>
-        ))}
+        {menuItems
+          .filter(e => !e.hidden)
+          .map((item, index) => (
+            <div
+              key={index}
+              style={{
+                padding: '10px',
+                color: 'black',
+                width: 'fit-content',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}
+              onClick={e => {
+                setIsMenuOpen(false)
+                router.push(item.link)
+              }}
+            >
+              <ButtonDiv>{item.menu}</ButtonDiv>
+            </div>
+          ))}
       </div>
 
       <div

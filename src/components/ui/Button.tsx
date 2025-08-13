@@ -10,21 +10,26 @@ type ButtonProps = {
 }
 
 export function FloatingButton({ children, onClick, style = {} }: ButtonProps) {
-  return <ButtonDiv onClick={onClick} style={{
-    position: 'fixed',
-    borderRadius: '50%',
-    backgroundColor: 'black',
-    bottom: '2rem',
-    right: '2rem',
-    zIndex: 10000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '4rem',
-    height: '4rem',
-  }}>
-    {children}
-  </ButtonDiv>
+  return (
+    <ButtonDiv
+      onClick={onClick}
+      style={{
+        position: 'fixed',
+        borderRadius: '50%',
+        backgroundColor: 'black',
+        bottom: '2rem',
+        right: '2rem',
+        zIndex: 10000,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '4rem',
+        height: '4rem',
+      }}
+    >
+      {children}
+    </ButtonDiv>
+  )
 }
 
 export default function Button({ children, onClick, style = {} }: ButtonProps) {
@@ -42,6 +47,7 @@ export default function Button({ children, onClick, style = {} }: ButtonProps) {
         padding: '0.5rem 1rem',
         lineHeight: 1.2,
         minWidth: '3rem',
+        width: 'fit-content',
         border: '1px solid #222',
         backgroundColor: '#222',
         color: '#fff',
