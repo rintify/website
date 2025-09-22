@@ -48,11 +48,13 @@ jobs:
                 volumes:
                   - app-data:/data
                 command: >
-                  sh -c "if [ ! -d ./prisma/migrations ] || [ -z \"$(ls -A ./prisma/migrations)\" ]; then
-                    npx prisma migrate deploy;
-                  fi &&
-                  npx prisma migrate deploy &&
-                  node server.js"
+                  sh -c "
+                    if [ ! -d ./prisma/migrations ]; then
+                      npx prisma migrate dev --name init;
+                    fi &&
+                    npx prisma migrate deploy &&
+                    node server.js
+                  "
 
                 networks: [webnet]
 
