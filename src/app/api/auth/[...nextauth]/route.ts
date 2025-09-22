@@ -31,6 +31,7 @@ export const authOptions: NextAuthOptions = {
           id:         user.id,
           name:       user.name,
           nickName:   user.nickName,
+          comment: user.comment,
           createdAt:  user.createdAt.toISOString(),
           updatedAt:  user.updatedAt.toISOString(),
         };
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
           id:         user.id,
           name:       user.name,
           nickName:   user.nickName,
+          comment:    user.comment,
           createdAt:  user.createdAt,
           updatedAt:  user.updatedAt,
         });
@@ -55,6 +57,7 @@ export const authOptions: NextAuthOptions = {
         id:         token.id,
         name:       token.name!,
         nickName:   token.nickName,
+        comment:    token.comment,
         createdAt:  token.createdAt,
         updatedAt:  token.updatedAt,
       };
