@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 const prisma = new PrismaClient()
 const userNameRegex = /^[0-9a-z_]{3,10}$/
 const passwordRegex = /^[\x21-\x7E]{8,32}$/
-const DAILY_LIMIT = 3
+const DAILY_LIMIT = 10
 
 export async function POST(req: Request) {
   const { name, password, comment } = await req.json()

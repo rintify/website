@@ -5,4 +5,4 @@ declare module '*.svg' {
   export default content;
 }
 
-type NextParams = { params: Promise<Record<string,string>> }
+type NextParams<T = Record<string,string>> = { params: Promise<T> }

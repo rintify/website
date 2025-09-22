@@ -7,6 +7,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Permission {
+  PUBLIC
+  PRIVATE
+}
 
 model User {
   id            String @id @default(ulid())
@@ -16,22 +20,60 @@ model User {
   comment       String @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  events        Event[]
+  groups        Group[]
 }
 
+model Group {
+  id  String @id @default(ulid())
+  name String @default("unknown")
+  comment       String @default("")
+  createdAt     DateTime @default(now())
+  visibility Permission @default(PRIVATE)
+  editability Permission @default(PRIVATE)
 
-model Event {
-  id     String @id @default(ulid())
-  name   String @unique
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-  shifts    Shift[]
+  ownerId String
+  owner   User     @relation(fields: [ownerId], references: [id])
+
+  persons Person[]
+  timeTables Timetable[]
 }
 
-model Shift {
+model Person {
+  id            String @id @default(ulid())
+  name      String @default("unknown")
+  comment       String @default("")
+  createdAt     DateTime @default(now())
+
+  groupId String
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  timeBands      TimeBand[]
+}
+
+model Timetable {
+  id          String   @id @default(ulid())
+  name        String   @default("unknown")
+  comment String   @default("")
+  createdAt     DateTime @default(now())
+
+  groupId String
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  timeBands      TimeBand[]
+}
+
+model TimeBand {
   id        String    @id @default(ulid())
-  eventId   String
-  event     Event     @relation(fields: [eventId], references: [id])
   startTime DateTime
   endTime   DateTime
+  comment String
+
+  timeTableId   String
+  timeTable     Timetable     @relation(fields: [timeTableId], references: [id], onDelete: Cascade)
+  
+  personId String
+  person Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
 }
+
+// DATABASE_URL="file:./dev.db"
+//npx prisma migrate dev --name init

@@ -25,6 +25,7 @@ export function FloatingButton({ children, onClick, style = {} }: ButtonProps) {
         alignItems: 'center',
         width: '4rem',
         height: '4rem',
+        ...style
       }}
     >
       {children}

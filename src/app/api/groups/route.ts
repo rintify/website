@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+import { requireAuth, parseRequest, checkTextResponse, checkLimitResponse } from '@/lib/nextauth-server'
+import { Object, String, Union, Undefined } from 'runtypes'
+
+const prisma = new PrismaClient()
+
+const CreateBody = Object({
+  name: String,
+})
+
+export async function GET(_req: NextRequest) {
+  const user = await requireAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const groups = await prisma.group.findMany({
+      where: { ownerId: user.id },
+      select: { id: true, name: true, comment: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    return NextResponse.json({ items: groups }, { status: 200 })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const user = await requireAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await parseRequest(CreateBody, req)
+  if (!body) return NextResponse.json({ error: '不正なリクエストです' }, { status: 400 })
+
+  let err = checkTextResponse('グループ名', body.name, 1, 20)
+  if (err) return err
+
+  err = await checkLimitResponse('グループ', 'group', 5, 24 * 21, { ownerId: user.id })
+  if (err) return err
+
+  try {
+    const created = await prisma.group.create({
+      data: {
+        ownerId: user.id,
+        name: body.name,
+        
+      },
+      select: { id: true, name: true, comment: true, createdAt: true },
+    })
+    return NextResponse.json(created, { status: 201 })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to create group' }, { status: 500 })
+  }
+}

@@ -11,14 +11,20 @@ import ButtonDiv from '@/components/ui/TextButton'
 import { DragDiv, DropDiv, useDragContext } from '@/hooks/DragContext'
 import { useModal } from '@/hooks/ModalContext'
 import { FileIcon, UpIcon } from '@/icons'
-import { deleteFile, uploadFile, useFileContent, useFiles, useSessionUser } from '@/lib/api'
-import base64url from 'base64url'
+import { useSessionUser } from '@/lib/api/user'
+import { useGroups, useGroupFileList, uploadGroupFile, deleteGroupFile } from '@/lib/api/group'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, Fragment } from 'react'
 
 export default function FileViewer() {
   const { session, sessionLoading } = useSessionUser()
-  const { files, filesLoading, mutateFiles } = useFiles(session?.id, 'private')
+  const { groups, groupsLoading } = useGroups()
+  const firstGroup = groups?.[0]
+  const { files, groupFileListLoading, mutateGroupFileList } = useGroupFileList(
+    !groupsLoading && firstGroup ? firstGroup.id : undefined
+  )
+
+  
   const [dragFile, setDragFile] = useState<string | undefined>()
   const { pushModal, popModal } = useModal()
   const { isDragging } = useDragContext()
@@ -29,12 +35,16 @@ export default function FileViewer() {
       pushModal('auth', () => <AuthModal />)
       return
     }
+    if (!firstGroup) {
+      alert('所属するグループがありません')
+      return
+    }
     if (!files) return
     for (const file of files) {
-      const res = await uploadFile(session.id, 'private', file)
+      const res = await uploadGroupFile(firstGroup.id, file.name, file)
       if (!res.ok) alert(res.error)
     }
-    mutateFiles()
+    mutateGroupFileList()
   }
 
   return (
@@ -50,11 +60,11 @@ export default function FileViewer() {
         <UserIcon userId={session?.id} style={{width: '4rem', height: '4rem'}} />
         <div>
           <span style={{ display: 'flex', alignItems: 'baseline' }}>
-            <Medium>{session?.nickName ?? 'ゲスト'}</Medium>さんのストレージ
+            <Medium>{firstGroup?.name ?? 'グループなし'}</Medium>のストレージ
           </span>
           <LoadingBar
             style={{ marginTop: '0.5rem', width: '15rem' }}
-            progress={files.reduce((s, f) => s + f.size, 0) / (20 * 1024 * 1024)}
+            progress={(Array.isArray(files) ? files.reduce((s: number, f: { size: number }) => s + f.size, 0) : 0) / (20 * 1024 * 1024)}
           />
         </div>
       </div>
@@ -74,15 +84,20 @@ export default function FileViewer() {
           }
         }}
       >
-        {files.length === 0 ? <Small style={{whiteSpace: 'nowrap'}}>ファイルがありません</Small> : files.map(file => (
-          <div
-            key={file.name}
-            style={{
-              width: '8rem',
-              height: '8rem',
-              borderRadius: '4px',
-            }}
-          >
+        {!Array.isArray(files) || files.length === 0 ? (
+          <Small style={{whiteSpace: 'nowrap'}}>
+            ファイルがありません (files: {JSON.stringify(files)}, loading: {groupFileListLoading})
+          </Small>
+        ) : (
+          files.map(file => (
+            <div
+              key={file.name}
+              style={{
+                width: '8rem',
+                height: '8rem',
+                borderRadius: '4px',
+              }}
+            >
             <DragDiv
               scaleRatio={0.5}
               style={isOver => {
@@ -108,9 +123,9 @@ export default function FileViewer() {
                       {
                         on: async ctx => {
                           ctx.popModal(file.name)
-                          if (session) {
-                            await deleteFile(session.id, 'private', file.name)
-                            mutateFiles()
+                          if (firstGroup) {
+                            await deleteGroupFile(firstGroup.id, file.name)
+                            mutateGroupFileList()
                           }
                         },
                         text: '削除',
@@ -132,10 +147,12 @@ export default function FileViewer() {
                       <ButtonDiv
                         line
                         onClick={() => {
-                          push(`/api/files/${session?.id}/private/${base64url.encode(file.name)}`)
+                          if (firstGroup) {
+                            push(`/api/groups/${firstGroup.id}/files/${encodeURIComponent(file.name)}`)
+                          }
                         }}
                       >
-                        {base64url.encode(file.name).substring(0, 15)}...
+                        {encodeURIComponent(file.name).substring(0, 15)}...
                       </ButtonDiv>
                     </ProfileTable>
                   </ModalBox>
@@ -143,8 +160,8 @@ export default function FileViewer() {
               }
               onDrop={data => {
                 if (data === 'delete') {
-                  if (session) {
-                    deleteFile(session.id, 'private', file.name).then(a => mutateFiles())
+                  if (firstGroup) {
+                    deleteGroupFile(firstGroup.id, file.name).then(() => mutateGroupFileList())
                     return true
                   }
                 }
@@ -171,7 +188,8 @@ export default function FileViewer() {
               </div>
             </DragDiv>
           </div>
-        ))}
+        ))
+        )}
       </DropDiv>
 
       <FileFloatingButton fullDrop style={{ alignSelf: 'flex-start', marginLeft: '20%' }} button onChange={onChange} />
@@ -184,7 +202,7 @@ export default function FileViewer() {
           ファイルを削除
         </DropDiv>
       </FadeDiv>
-      <LoadingCover expose list={[{ progress: !filesLoading, message: 'ファイル一覧取得中' }]} />
+      <LoadingCover expose list={[{ progress: groupFileListLoading !== 'loading', message: 'ファイル一覧取得中' }]} />
     </Box>
   )
 }

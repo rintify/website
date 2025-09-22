@@ -5,14 +5,13 @@ import { use, useEffect, useRef, useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import AuthModal from '@/components/AuthModal'
 import Button from '@/components/ui/Button'
-import { delay, uploadFile, useSessionUser } from '@/lib/api'
+import { delay, uploadUserIcon, useSessionUser, useUser } from '@/lib/api/user'
 import { useModal } from '@/hooks/ModalContext'
 import { HeaderMargine } from '@/components/Header'
 import { Medium, ModalBox, PageBox, ProfileTable } from '@/components/ui/Box'
 import Box, { Large, Small } from '@/components/ui/Box'
 import TextField from '@/components/ui/Textarea'
 import { EditIcon } from '@/icons'
-import { useUser } from '@/lib/api'
 import { LoadingCover } from '@/components/ui/LoadingBar'
 import { MarkdownBox } from '@/components/ui/Markdown'
 import { formatJapaneseDate } from '@/lib/util'
@@ -70,7 +69,7 @@ export default function HomePage() {
               setProgress(1)
               return '画像ファイルを指定してください'
             }
-            res = await uploadFile(session?.id, 'icons', compressedFile)
+            res = await uploadUserIcon(session?.id, compressedFile)
             setProgress(1)
             if (!res.ok) return res.error
           }
@@ -89,8 +88,6 @@ export default function HomePage() {
       </ModalBox>
     )
   }
-
-  console.log('fff')
 
   return (
     <PageBox>

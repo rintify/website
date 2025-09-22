@@ -188,3 +188,55 @@ export const FadeDiv = ({
     </AnimatePresence>
   )
 }
+
+type ButtonBoxLiteProps = {
+  children: ReactNode
+  width?: number
+  height?: number
+  style?: React.CSSProperties
+  childStyle?: React.CSSProperties
+  onClick?: () => void
+}
+
+export function ButtonBoxLite({ children, style, onClick, childStyle }: ButtonBoxLiteProps) {
+  const [isPressed, setIsPressed] = useState(false)
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <div
+      style={{
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        userSelect: 'none',
+        ...style,
+      }}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => {
+        setIsPressed(false)
+        if (onClick) onClick()
+      }}
+      onMouseLeave={() => {
+        setIsPressed(false)
+        setHovered(false)
+      }}
+      onMouseEnter={() => setHovered(true)}
+    >
+      <div
+        style={{
+          transform: isPressed ? 'scale(0.9)' : hovered ? 'scale(1.2)' : 'scale(1)',
+          transition: 'transform 0.3s ease',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          ...childStyle,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}

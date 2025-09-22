@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1000.00" height="1000.00" viewBox="0.00 0.00 1000.00 1000.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g stroke-linecap="round" id="cross">
+<path d="M80.83,499.12 L887.80,499.12" fill="none" stroke="rgb(7, 0, 0)" stroke-width="5.65" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M483.51,499.12 L483.51,900.19" fill="none" stroke="rgb(7, 0, 0)" stroke-width="5.65" stroke-opacity="1.00" stroke-linejoin="round"/>
+<path d="M483.51,499.12 L483.51,94.83" fill="none" stroke="rgb(7, 0, 0)" stroke-width="5.65" stroke-opacity="1.00" stroke-linejoin="round"/>
+</g>
+</svg>

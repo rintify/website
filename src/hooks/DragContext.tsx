@@ -20,16 +20,9 @@ import { ulid } from 'ulid'
 import { createPortal } from 'react-dom'
 import { CollisionDetection, Rect } from '@dnd-kit/core/dist/utilities'
 import styled from 'styled-components'
+import { useClient } from './util'
 
-const useClient = () => {
-  const [client, setClient] = useState<{ document?: Document; window?: Window }>({})
-  useEffect(() => {
-    setClient({ document, window })
-  }, [])
-  return client
-}
-
-type DropHandler = (data: any, rect?: ClientRect) =>  void | boolean
+type DropHandler = (data: any, rect?: ClientRect) => void | boolean
 type DataHandler = () => Promise<any> | any
 type DragHandler = () => void
 type OverHandler = (data: any) => void
@@ -99,7 +92,7 @@ export const DragProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }}
       onDragEnd={async ({ active, over }) => {
         const activeId = active.id as string,
-        overId = over?.id as string | undefined
+          overId = over?.id as string | undefined
         const overHandler = overId ? handlers[overId] : undefined
         const activeHandler = handlers[activeId]
         overHandler?.onDrop(await activeHandler?.getData())
@@ -265,21 +258,20 @@ export function DragDiv({ onClick, onDrag, onDrop, getData, onOver, children, st
   const [pressed, setPressed] = useState(false)
   const [over, setOver] = useState(false)
   const [rect, setRect] = useState<ClientRect | undefined>(undefined)
-  const [target, setTarget] = useState<{ x: number; y: number; drop: boolean}>({ x: 0, y: 0  , drop: false})
+  const [target, setTarget] = useState<{ x: number; y: number; drop: boolean }>({ x: 0, y: 0, drop: false })
 
   if (typeof style === 'function') style = style(over)
 
   useEffect(() => {
     if (active?.id === id && active?.rect.current.initial) {
       setRect(active.rect.current.initial)
-      console.log('setrec')
     }
   }, [active, !!active?.rect.current, !!active?.rect.current.initial])
 
   useEffect(() => {
     if (isDragging) {
       setOver(true)
-    } else if(over) {
+    } else if (over) {
       const t = window?.setTimeout(() => {
         setOver(false)
         setHovered(false)
@@ -293,12 +285,12 @@ export function DragDiv({ onClick, onDrag, onDrop, getData, onOver, children, st
   }, [isDragging])
 
   useEffect(() => {
-    if(target.drop) return
+    if (target.drop) return
     const t = window?.setTimeout(() => {
-          setTarget({x: 0, y: 0, drop: false})
+      setTarget({ x: 0, y: 0, drop: false })
     })
     return clearTimeout(t)
-  },[target])
+  }, [target])
 
   renderRef.current = (
     <div
@@ -322,7 +314,8 @@ export function DragDiv({ onClick, onDrag, onDrop, getData, onOver, children, st
         cursor: isDragging ? 'grabbing' : 'pointer',
         backgroundColor: over ? 'white' : 'transparent',
         transition:
-          `opacity 500ms ease, transform ${transform ? '0ms' : '200ms'} ease, box-shadow 100ms ease-out` + (style?.transition ? ', ' + style.transition : ''),
+          `opacity 500ms ease, transform ${transform ? '0ms' : '200ms'} ease, box-shadow 100ms ease-out` +
+          (style?.transition ? ', ' + style.transition : ''),
         transform: (() => {
           const s = pressed ? 0.9 : hovered ? 1.1 : 1
           const scale = 1 + scaleRatio * (s - 1)
@@ -340,13 +333,13 @@ export function DragDiv({ onClick, onDrag, onDrop, getData, onOver, children, st
       id,
       (data, _rect) => {
         if (rect && _rect && onDrop?.(data)) {
-          console.log(_rect)
-          const cx = (_rect.right + _rect.left)*0.5, cy = (_rect.bottom + _rect.top)*0.5
-          const ax = (rect.right + rect.left)*0.5, ay = (rect.bottom + rect.top)*0.5
-          setTarget({ x: cx - ax, y: cy - ay , drop: true})
+          const cx = (_rect.right + _rect.left) * 0.5,
+            cy = (_rect.bottom + _rect.top) * 0.5
+          const ax = (rect.right + rect.left) * 0.5,
+            ay = (rect.bottom + rect.top) * 0.5
+          setTarget({ x: cx - ax, y: cy - ay, drop: true })
         } else {
-          setTarget({ x: 0, y: 0 , drop: false})
-          
+          setTarget({ x: 0, y: 0, drop: false })
         }
       },
       getData ?? (async () => {}),

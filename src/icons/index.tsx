@@ -11,6 +11,7 @@ import LoosSvg from './loos.svg'
 import ObjectSvg from './object.svg'
 import BasisSvg from './basis.svg'
 import ButtonDiv from '@/components/ui/TextButton'
+import AddSvg from './add.svg'
 
 type IconProps = {
   style?: CSSProperties
@@ -64,3 +65,4 @@ export const UpIcon    = createIcon(UpSvg)
 export const CrossIcon = createIcon(CrossSvg)
 export const ObjectIcon = createIcon(ObjectSvg)
 export const BasisIcon = createIcon(BasisSvg)
+export const AddIcon = createIcon(AddSvg)

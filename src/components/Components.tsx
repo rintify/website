@@ -34,7 +34,7 @@ export function UserIcon({userId, style }: { userId: string | undefined; style?:
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundImage: userId ? `url(/api/files/${userId}/icons/icon.png)` : 'none',
+          backgroundImage: userId ? `url(/api/users/${userId}/icon)` : 'none',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           zIndex: 2
