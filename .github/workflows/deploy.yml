@@ -17,11 +17,63 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
+            mkdir -p /srv/website
             cd /srv/website
 
-            cat > .env <<EOF
-            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
-            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            if [ ! -d app/.git ]; then
+              git clone https://github.com/rintify/website.git app
+            fi
+
+            cat > Caddyfile <<EOF
+            ${{ secrets.NEXTAUTH_URL }}, www.${{ secrets.NEXTAUTH_URL }} {
+              encode gzip
+              reverse_proxy web:3000
+            }
+            EOF
+
+            cat > docker-compose.yml <<EOF
+            services:
+              web:
+                build:
+                  context: ./app
+                  target: runner
+                restart: unless-stopped
+                environment:
+                  - NODE_ENV=production
+                  - PORT=3000
+                  - HOSTNAME=0.0.0.0
+                  - DATABASE_URL=file:/data/sqlite.db
+                  - NEXTAUTH_URL=https://${{ secrets.NEXTAUTH_URL }}
+                  - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+                volumes:
+                  - app-data:/data
+                command: >
+                  sh -c "if [ ! -d ./prisma/migrations ] || [ -z \"$(ls -A ./prisma/migrations)\" ]; then
+                    npx prisma migrate deploy;
+                  fi &&
+                  npx prisma migrate deploy &&
+                  node server.js"
+
+                networks: [webnet]
+
+              caddy:
+                image: caddy:2
+                restart: unless-stopped
+                ports: ["80:80","443:443"]
+                volumes:
+                  - ./Caddyfile:/etc/caddy/Caddyfile:ro
+                  - caddy-data:/data
+                  - caddy-config:/config
+                depends_on: [web]
+                networks: [webnet]
+
+            networks:
+              webnet:
+
+            volumes:
+              app-data:
+              caddy-data:
+              caddy-config:
             EOF
 
             cd app
