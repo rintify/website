@@ -6,6 +6,7 @@ import mime from 'mime-types'
 import { fileTypeFromBuffer } from 'file-type'
 
 const fileRegex = /^(?:[A-Za-z0-9_.-]|%[0-9A-Fa-f]{2})+$/
+const baseDir = process.env.UPLOADS_DIR || path.join(process.cwd(), "uploads");
 
 export async function _GET(...pathSegments: string[]) {
   const filepath = safeUploadsPath(...pathSegments)
@@ -83,7 +84,6 @@ export async function _POST({
   let actualFilename = filename
 
   if (!filename && pathSegments.length > 0) {
-
     actualPathSegments = pathSegments.slice(0, -1)
     actualFilename = pathSegments[pathSegments.length - 1]
   }
@@ -213,7 +213,6 @@ export function safeUploadsPath(...pathSegments: string[]) {
     if (!fileRegex.test(s)) return
   }
 
-  const baseDir = path.resolve(process.cwd(), 'uploads')
   console.log("baseDir:",baseDir)
   const filepath = path.resolve(baseDir, ...encodedSegments)
   console.log("filepath:",filepath)
@@ -234,12 +233,12 @@ export function safeUploadsPathForWrite(...pathSegments: string[]) {
     if (!fileRegex.test(s)) return
   }
 
-  const baseDir = path.resolve(process.cwd(), 'uploads')
   console.log("baseDir:",baseDir)
   const filepath = path.resolve(baseDir, ...encodedSegments)
   console.log("filepath:",filepath)
 
   if (!fs.existsSync(baseDir)) return
+  console.log("filepath after exists check:",filepath)
 
   if (!filepath.startsWith(baseDir + path.sep) && filepath !== baseDir) return
 

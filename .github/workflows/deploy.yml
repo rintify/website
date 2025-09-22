@@ -24,7 +24,7 @@ jobs:
               git clone https://github.com/rintify/website.git app
             fi
 
-            mkdir -p app/uploads
+            mkdir -p data/uploads
 
             cat > Caddyfile <<EOF
             ${{ secrets.NEXTAUTH_URL }}, www.${{ secrets.NEXTAUTH_URL }} {
@@ -47,8 +47,9 @@ jobs:
                   - DATABASE_URL=file:/data/sqlite.db
                   - NEXTAUTH_URL=https://${{ secrets.NEXTAUTH_URL }}
                   - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+                  - UPLOADS_DIR=/data/uploads
                 volumes:
-                  - app-data:/data
+                  - ./data:/data 
                 command: >
                   sh -c "
                     if [ ! -d ./prisma/migrations ]; then
