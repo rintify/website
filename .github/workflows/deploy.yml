@@ -24,6 +24,8 @@ jobs:
               git clone https://github.com/rintify/website.git app
             fi
 
+            mkdir app/uploads
+
             cat > Caddyfile <<EOF
             ${{ secrets.NEXTAUTH_URL }}, www.${{ secrets.NEXTAUTH_URL }} {
               encode gzip

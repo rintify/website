@@ -203,16 +203,20 @@ export async function deleteAnyFile(filepath: string) {
 }
 
 export function safeUploadsPath(...pathSegments: string[]) {
+  console.log("safeUploadsPath called with:",pathSegments)
   if (pathSegments.length === 0) return
 
   const encodedSegments = pathSegments.map(s => encodeURIComponent(s))
+  console.log("encodedSegments:",encodedSegments)
 
   for (const s of encodedSegments) {
     if (!fileRegex.test(s)) return
   }
 
   const baseDir = path.resolve(process.cwd(), 'uploads')
+  console.log("baseDir:",baseDir)
   const filepath = path.resolve(baseDir, ...encodedSegments)
+  console.log("filepath:",filepath)
 
   if (!fs.existsSync(filepath)) return
 
@@ -220,16 +224,20 @@ export function safeUploadsPath(...pathSegments: string[]) {
 }
 
 export function safeUploadsPathForWrite(...pathSegments: string[]) {
+  console.log("safeUploadsPathForWrite called with:",pathSegments)
   if (pathSegments.length === 0) return
 
   const encodedSegments = pathSegments.map(s => encodeURIComponent(s))
-  
+  console.log("encodedSegments:",encodedSegments)
+
   for (const s of encodedSegments) {
     if (!fileRegex.test(s)) return
   }
 
   const baseDir = path.resolve(process.cwd(), 'uploads')
+  console.log("baseDir:",baseDir)
   const filepath = path.resolve(baseDir, ...encodedSegments)
+  console.log("filepath:",filepath)
 
   if (!fs.existsSync(baseDir)) return
 
