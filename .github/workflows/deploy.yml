@@ -18,6 +18,12 @@ jobs:
           script: |
             set -e
             cd /srv/website
+
+            cat > .env <<EOF
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            EOF
+
             cd app
             git fetch --depth=1 origin main
             git checkout -f main
