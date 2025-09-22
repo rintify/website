@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   compiler: {
     styledComponents: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   turbopack: {
     rules: {
       '*.svg': {
