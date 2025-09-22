@@ -1,4 +1,4 @@
-import { Group, Person, TimeBand, Timetable, User } from '@prisma/client'
+import { Group, Person, TimeBand, Timetable, User, $Enums } from '@prisma/client'
 import { useSession } from 'next-auth/react'
 import { useRef, useEffect } from 'react'
 import useSWR, { KeyedMutator } from 'swr'
@@ -41,7 +41,7 @@ export const useGroup = (
   return { group, groupLoading, mutateGroup: mutate }
 }
 
-export async function updateGroup(groupId: string, params: { name?: string; comment?: string }) {
+export async function updateGroup(groupId: string, params: { name?: string; comment?: string; visibility?: $Enums.Permission; editability?: $Enums.Permission }) {
   const res = await fetch(`/api/groups/${groupId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -264,6 +264,20 @@ export async function deleteGroupFile(groupId: string, path: string) {
 
   const res = await fetch(`/api/groups/${groupId}/files/${encodedPath}`, {
     method: 'DELETE',
+  })
+
+  const data = await res.json()
+  return { ok: res.ok, error: data.error }
+}
+
+export async function uploadGroupIcon(groupId: string | undefined, file: File | undefined) {
+  if(!groupId || !file) return { ok: false, error: "アップロードに失敗しました" }
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetch(`/api/groups/${groupId}/icon`, { 
+    method: 'POST',
+    body: formData,
   })
 
   const data = await res.json()

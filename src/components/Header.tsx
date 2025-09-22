@@ -33,7 +33,7 @@ const Header: React.FC = () => {
   const [showHeader, setShowHeader] = useState(true)
 
   useEffect(() => {
-    setItem(menuItems.find(e => e.link == pathname))
+    setItem(menuItems.filter(e => pathname.startsWith(e.link)).reduce((prev, curr) => prev.link.length > curr.link.length ? prev : curr))
     setIsMenuOpen(false)
   }, [pathname])
 

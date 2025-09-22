@@ -1,7 +1,7 @@
 'use client'
 
 import AuthModal from '@/components/AuthModal'
-import { UserIcon } from '@/components/Components'
+import { GroupIcon, UserIcon } from '@/components/Components'
 import { HeaderMargine } from '@/components/Header'
 import Box, { FadeDiv, Large, Medium, Line, ModalBox, PageBox, ProfileTable, Small } from '@/components/ui/Box'
 import Button, { FloatingButton } from '@/components/ui/Button'
@@ -23,8 +23,8 @@ export default function FileViewer() {
   const { files, groupFileListLoading, mutateGroupFileList } = useGroupFileList(
     !groupsLoading && firstGroup ? firstGroup.id : undefined
   )
+  const router = useRouter()
 
-  
   const [dragFile, setDragFile] = useState<string | undefined>()
   const { pushModal, popModal } = useModal()
   const { isDragging } = useDragContext()
@@ -57,14 +57,19 @@ export default function FileViewer() {
     >
       <HeaderMargine />
       <div style={{ alignSelf: 'flex-start', marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
-        <UserIcon userId={session?.id} style={{width: '4rem', height: '4rem'}} />
+        <ButtonDiv onClick={() => router.push(`/groups/${firstGroup?.id}`)}>
+          <GroupIcon groupId={firstGroup?.id} style={{ width: '4rem', height: '4rem' }} />
+        </ButtonDiv>
         <div>
           <span style={{ display: 'flex', alignItems: 'baseline' }}>
             <Medium>{firstGroup?.name ?? 'グループなし'}</Medium>のストレージ
           </span>
           <LoadingBar
             style={{ marginTop: '0.5rem', width: '15rem' }}
-            progress={(Array.isArray(files) ? files.reduce((s: number, f: { size: number }) => s + f.size, 0) : 0) / (20 * 1024 * 1024)}
+            progress={
+              (Array.isArray(files) ? files.reduce((s: number, f: { size: number }) => s + f.size, 0) : 0) /
+              (20 * 1024 * 1024)
+            }
           />
         </div>
       </div>
@@ -85,9 +90,7 @@ export default function FileViewer() {
         }}
       >
         {!Array.isArray(files) || files.length === 0 ? (
-          <Small style={{whiteSpace: 'nowrap'}}>
-            ファイルがありません (files: {JSON.stringify(files)}, loading: {groupFileListLoading})
-          </Small>
+          <Small style={{ whiteSpace: 'nowrap' }}>ファイルがありません</Small>
         ) : (
           files.map(file => (
             <div
@@ -98,97 +101,97 @@ export default function FileViewer() {
                 borderRadius: '4px',
               }}
             >
-            <DragDiv
-              scaleRatio={0.5}
-              style={isOver => {
-                return {
-                  width: '8rem',
-                  height: '8rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'border-color 0.3s ease, border-width 0.3s ease',
-                  borderColor: dragFile === file.name ? '#f00' : isOver ? '#000' : '#0000',
-                  borderStyle: 'solid',
-                  borderWidth: dragFile === file.name ? '2px' : '1px',
-                  borderRadius: '4px',
-                }
-              }}
-              onClick={() =>
-                pushModal(file.name, () => (
-                  <ModalBox
-                    title='ファイル詳細'
-                    actions={[
-                      {
-                        on: async ctx => {
-                          ctx.popModal(file.name)
-                          if (firstGroup) {
-                            await deleteGroupFile(firstGroup.id, file.name)
-                            mutateGroupFileList()
-                          }
-                        },
-                        text: '削除',
-                      },
-                      {
-                        on: async ctx => {
-                          ctx.popModal(file.name)
-                        },
-                        text: 'OK',
-                      },
-                    ]}
-                  >
-                    <ProfileTable>
-                      ファイル名
-                      {file.name}
-                      サイズ
-                      {`${file.size} バイト`}
-                      URL
-                      <ButtonDiv
-                        line
-                        onClick={() => {
-                          if (firstGroup) {
-                            push(`/api/groups/${firstGroup.id}/files/${encodeURIComponent(file.name)}`)
-                          }
-                        }}
-                      >
-                        {encodeURIComponent(file.name).substring(0, 15)}...
-                      </ButtonDiv>
-                    </ProfileTable>
-                  </ModalBox>
-                ))
-              }
-              onDrop={data => {
-                if (data === 'delete') {
-                  if (firstGroup) {
-                    deleteGroupFile(firstGroup.id, file.name).then(() => mutateGroupFileList())
-                    return true
+              <DragDiv
+                scaleRatio={0.5}
+                style={isOver => {
+                  return {
+                    width: '8rem',
+                    height: '8rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'border-color 0.3s ease, border-width 0.3s ease',
+                    borderColor: dragFile === file.name ? '#f00' : isOver ? '#000' : '#0000',
+                    borderStyle: 'solid',
+                    borderWidth: dragFile === file.name ? '2px' : '1px',
+                    borderRadius: '4px',
                   }
+                }}
+                onClick={() =>
+                  pushModal(file.name, () => (
+                    <ModalBox
+                      title='ファイル詳細'
+                      actions={[
+                        {
+                          on: async ctx => {
+                            ctx.popModal(file.name)
+                            if (firstGroup) {
+                              await deleteGroupFile(firstGroup.id, file.name)
+                              mutateGroupFileList()
+                            }
+                          },
+                          text: '削除',
+                        },
+                        {
+                          on: async ctx => {
+                            ctx.popModal(file.name)
+                          },
+                          text: 'OK',
+                        },
+                      ]}
+                    >
+                      <ProfileTable>
+                        ファイル名
+                        {file.name}
+                        サイズ
+                        {`${file.size} バイト`}
+                        URL
+                        <ButtonDiv
+                          line
+                          onClick={() => {
+                            if (firstGroup) {
+                              push(`/api/groups/${firstGroup.id}/files/${encodeURIComponent(file.name)}`)
+                            }
+                          }}
+                        >
+                          {encodeURIComponent(file.name).substring(0, 15)}...
+                        </ButtonDiv>
+                      </ProfileTable>
+                    </ModalBox>
+                  ))
                 }
-                setDragFile(undefined)
-              }}
-              onOver={data => {
-                setDragFile(data === 'delete' ? file.name : undefined)
-              }}
-            >
-              <FileIcon style={{ width: '4rem', height: '4rem' }} />
-              <div
-                style={{
-                  height: '3rem',
-                  width: '6rem',
-                  marginTop: '0.5rem',
-                  fontSize: '0.75rem',
-                  textAlign: 'center',
-                  wordWrap: 'unset',
+                onDrop={data => {
+                  if (data === 'delete') {
+                    if (firstGroup) {
+                      deleteGroupFile(firstGroup.id, file.name).then(() => mutateGroupFileList())
+                      return true
+                    }
+                  }
+                  setDragFile(undefined)
+                }}
+                onOver={data => {
+                  setDragFile(data === 'delete' ? file.name : undefined)
                 }}
               >
-                {file.name.length < 15
-                  ? file.name
-                  : file.name.substring(0, 8) + '...' + file.name.substring(file.name.length - 5)}
-              </div>
-            </DragDiv>
-          </div>
-        ))
+                <FileIcon style={{ width: '4rem', height: '4rem' }} />
+                <div
+                  style={{
+                    height: '3rem',
+                    width: '6rem',
+                    marginTop: '0.5rem',
+                    fontSize: '0.75rem',
+                    textAlign: 'center',
+                    wordWrap: 'unset',
+                  }}
+                >
+                  {file.name.length < 15
+                    ? file.name
+                    : file.name.substring(0, 8) + '...' + file.name.substring(file.name.length - 5)}
+                </div>
+              </DragDiv>
+            </div>
+          ))
         )}
       </DropDiv>
 

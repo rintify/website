@@ -225,7 +225,7 @@ export function ButtonBoxLite({ children, style, onClick, childStyle }: ButtonBo
     >
       <div
         style={{
-          transform: isPressed ? 'scale(0.9)' : hovered ? 'scale(1.2)' : 'scale(1)',
+          transform: isPressed ? 'scale(1)' : hovered ? 'scale(1.2)' : 'scale(1.1)',
           transition: 'transform 0.3s ease',
           width: '100%',
           height: '100%',

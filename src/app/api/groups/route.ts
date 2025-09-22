@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { requireAuth, parseRequest, checkTextResponse, checkLimitResponse } from '@/lib/nextauth-server'
+import { PrismaClient, $Enums } from '@prisma/client'
+import { requireAuth, parseRequest, checkTextResponse, checkLimitResponse, NAME_REGEX } from '@/lib/nextauth-server'
 import { Object, String, Union, Undefined } from 'runtypes'
 
 const prisma = new PrismaClient()
@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest) {
   try {
     const groups = await prisma.group.findMany({
       where: { ownerId: user.id },
-      select: { id: true, name: true, comment: true, createdAt: true },
+      select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
       orderBy: { createdAt: 'asc' },
     })
     return NextResponse.json({ items: groups }, { status: 200 })
@@ -33,8 +33,9 @@ export async function POST(req: NextRequest) {
   const body = await parseRequest(CreateBody, req)
   if (!body) return NextResponse.json({ error: '不正なリクエストです' }, { status: 400 })
 
-  let err = checkTextResponse('グループ名', body.name, 1, 20)
+  let err = checkTextResponse('グループ名', body.name, 1, 20, NAME_REGEX, true)
   if (err) return err
+
 
   err = await checkLimitResponse('グループ', 'group', 5, 24 * 21, { ownerId: user.id })
   if (err) return err
@@ -44,9 +45,8 @@ export async function POST(req: NextRequest) {
       data: {
         ownerId: user.id,
         name: body.name,
-        
       },
-      select: { id: true, name: true, comment: true, createdAt: true },
+      select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
     })
     return NextResponse.json(created, { status: 201 })
   } catch (err) {

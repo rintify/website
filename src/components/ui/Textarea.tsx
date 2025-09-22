@@ -12,6 +12,8 @@ type TextareaProps = {
   style?: CSSProperties
   single?: true
   password?: true
+  onFocus?: () => void
+  onBlur?: () => void
 }
 
 const Container = styled.div`
@@ -52,7 +54,7 @@ const StyledFullTextarea = styled.textarea`
 
 const AnimatedContainer = animated(Container)
 
-export default function TextField({ password, single, style, value, onChange }: TextareaProps) {
+export default function TextField({ password, single, style, value, onChange, onFocus, onBlur }: TextareaProps) {
   const ref = useRef<HTMLTextAreaElement & HTMLInputElement>(null)
   const [focused, setFocused] = useState(false)
   const [full, setFull] = useState(false)
@@ -102,8 +104,14 @@ export default function TextField({ password, single, style, value, onChange }: 
           type={password ? 'password' : 'text'}
           value={value}
           onChange={e => onChange?.(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => {
+            setFocused(true)
+            onFocus?.()
+          }}
+          onBlur={() => {
+            setFocused(false)
+            onBlur?.()
+          }}
           spellCheck={false}
           autoComplete='new-password'
         />
@@ -113,8 +121,14 @@ export default function TextField({ password, single, style, value, onChange }: 
             ref={ref}
             value={value}
             onChange={e => onChange?.(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
+            onFocus={() => {
+              setFocused(true)
+              onFocus?.()
+            }}
+            onBlur={() => {
+              setFocused(false)
+              onBlur?.()
+            }}
             onKeyDown={handleKeyDown}
             spellCheck={false}
             autoComplete='new-password'

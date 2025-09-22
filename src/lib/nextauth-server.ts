@@ -74,15 +74,18 @@ export async function checkLimitResponse<M extends ModelKeys>(
   return
 }
 
-export const NAME_REGEX = /^[^\\u0000-\\u001f]*$/
+export const NAME_REGEX = /^[^\u0000-\u001f]*$/
 export function checkTextResponse(
   what: string,
   value: string | undefined,
   minLen: number,
   maxLen: number,
-  re?: RegExp
+  re?: RegExp,
+  trim?: boolean
 ) {
-  if (value === undefined || (value.length >= minLen && value.length <= maxLen && (!re || re.test(value)))) return
+  if (value === undefined) return
+  if (trim) value = value.trim()
+  if (value.length >= minLen && value.length <= maxLen && (!re || re.test(value))) return
   return NextResponse.json(
     { error: `${what}は${minLen}字以上${maxLen}字以内の文字列で指定してください` },
     { status: 400 }

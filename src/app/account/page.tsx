@@ -17,8 +17,7 @@ import { MarkdownBox } from '@/components/ui/Markdown'
 import { formatJapaneseDate } from '@/lib/util'
 import { UserIcon } from '@/components/Components'
 import ButtonDiv from '@/components/ui/TextButton'
-import { FileBox } from '@/components/ui/FileBox'
-import imageCompression from 'browser-image-compression'
+import { IconEditModal } from '@/components/ui/IconEditModal'
 
 export default function HomePage() {
   const { session, sessionLoading } = useSessionUser()
@@ -44,48 +43,17 @@ export default function HomePage() {
   }, [userLoading, sessionLoading, user])
 
   function IconModal() {
-    const [iconFile, setIconFile] = useState<File | undefined>()
-    const [progress, setProgress] = useState(1)
     return (
-      <ModalBox
+      <IconEditModal
         title='アイコン'
-        actions={async () => {
-          if (!session) return 'ログインしてください'
-          setProgress(0)
-          let res
-          if (iconFile) {
-            let compressedFile = iconFile
-            try {
-              for (let i = 0; i < 5; i++) {
-                compressedFile = await imageCompression(compressedFile, {
-                  onProgress: a => setProgress(0.9*a/100),
-                  maxSizeMB: 0.05,
-                  maxWidthOrHeight: 256 ,
-                  useWebWorker: true,
-                })
-                if (compressedFile.size <= 50*1024) break
-              }
-            } catch {
-              setProgress(1)
-              return '画像ファイルを指定してください'
-            }
-            res = await uploadUserIcon(session?.id, compressedFile)
-            setProgress(1)
-            if (!res.ok) return res.error
-          }
-
-          popModal('icon')
-          if(res?.ok) window.location.reload()
+        uploadFunction={async (file) => {
+          if (!session) return { ok: false, error: 'ログインしてください' }
+          return await uploadUserIcon(session.id, file)
         }}
-      >
-        <FileBox
-          files={iconFile}
-          fullDrop
-          style={{ alignSelf: 'center', width: '15rem', height: '8rem' }}
-          onChange={files => setIconFile(files[0])}
-        />
-        <LoadingCover list={[{progress: progress, message: '画像を圧縮中'}]} />
-      </ModalBox>
+        onSuccess={() =>  window.location.reload()}
+        modalKey='icon'
+        popModal={popModal}
+      />
     )
   }
 
