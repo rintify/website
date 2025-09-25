@@ -1,8 +1,8 @@
-// components/SampleContext.tsx
+// src/app/craft/page.tsx
 'use client'
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { Craft } from './lib/craft'
-import Button from '@/components/ui/Button'
+import Button from '@/components/Button'
 import { useModal } from '@/hooks/ModalContext'
 import * as THREE from 'three'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
@@ -15,17 +15,8 @@ import { moveCenter, moveOrbit } from './lib/camera'
 import { Loupe, PopButton } from './compo/loupe'
 import { BasisIcon, ObjectIcon } from '@/icons'
 import { CraftAnimate, deleteObject, deselect, lookSelected, putObject, rotateBasis, selectByPointer, setBasis } from './lib/operate'
-import ButtonDiv from '@/components/ui/TextButton'
-
-type CraftContextType = {
-  craft?: Craft
-}
-
-const CraftContext = createContext<CraftContextType | undefined>(undefined)
-
-export const useSampleContext = () => {
-  return useContext(CraftContext)!
-}
+import ButtonDiv from '@/components/TextButton'
+import { CraftContext, useSampleContext } from './CraftContext'
 
 const ThreeScene = () => {
   const mountRef = useRef<HTMLDivElement>(null)

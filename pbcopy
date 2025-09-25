@@ -1,0 +1,8 @@
+.next/types/app/api/auth/[...nextauth]/route.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/Users/rin/ri-n/src/app/api/auth/[...nextauth]/route"), "POST" | "PATCH" | "DELETE" | "config" | "generateStaticParams" | "revalidate" | "dynamic" | "dynamicParams" | ... 7 more ... | "PUT", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'authOptions' is incompatible with index signature.
+    Type 'AuthOptions' is not assignable to type 'never'.
+.next/types/app/craft/page.ts(12,13): error TS2344: Type 'OmitWithTag<typeof import("/Users/rin/ri-n/src/app/craft/page"), "default" | "config" | "metadata" | "viewport" | "generateStaticParams" | "revalidate" | "dynamic" | "dynamicParams" | "fetchCache" | ... 5 more ... | "experimental_ppr", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'useSampleContext' is incompatible with index signature.
+    Type '() => CraftContextType' is not assignable to type 'never'.
+src/components/Button.tsx(4,23): error TS2307: Cannot find module './ui/TextButton' or its corresponding type declarations.
+src/components/IconEditModal.tsx(4,30): error TS2307: Cannot find module './ui/LoadingBar' or its corresponding type declarations.

@@ -1,7 +1,7 @@
 // lib/nextauth-server.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../app/api/auth/[...nextauth]/route'
+import { authOptions } from './auth'
 import fs from 'fs'
 import path from 'path'
 import { Object } from 'runtypes'

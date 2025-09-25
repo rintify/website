@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useSelectedLayoutSegment } from 'next/navigation'
 import { LayoutRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import { Suspense, useContext, useEffect, useRef, useState } from 'react'
-import { LoadingCover } from './ui/LoadingBar'
+import { LoadingCover } from '../components/LoadingBar'
 
 function usePreviousValue<T>(value: T): T | undefined {
   const prev = useRef<T | undefined>(undefined)

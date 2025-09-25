@@ -10,7 +10,7 @@ import UpSvg from './up.svg'
 import LoosSvg from './loos.svg'
 import ObjectSvg from './object.svg'
 import BasisSvg from './basis.svg'
-import ButtonDiv from '@/components/ui/TextButton'
+import ButtonDiv from '@/components/TextButton'
 import AddSvg from './add.svg'
 
 type IconProps = {

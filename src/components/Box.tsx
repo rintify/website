@@ -142,7 +142,6 @@ export const ProfileTable = ({ children, style }: ProfileTableProps) => {
       style={{
         display: 'grid',
         gridTemplateColumns: 'max-content 1fr',
-        rowGap: '1rem',
         columnGap: '1rem',
         width: '100%',
         ...style,
@@ -154,7 +153,7 @@ export const ProfileTable = ({ children, style }: ProfileTableProps) => {
           style={{
             whiteSpace: i % 2 === 0 ? 'normal' : 'break-spaces',
             wordBreak: i % 2 === 0 ? undefined : 'break-word',
-            paddingRight: '1rem',
+            padding: '0.3rem 1rem 0.3rem 0',
             borderRight: i % 2 === 0 ? '1px solid #000' : undefined,
           }}
         >

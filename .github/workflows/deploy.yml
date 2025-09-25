@@ -52,7 +52,8 @@ jobs:
                   - ./data:/data 
                 command: >
                   sh -c "
-                    if [ ! -d ./prisma/migrations ]; then
+                    if [ ! -d ./prisma/migrations ] || [ -z \"$(ls -A ./prisma/migrations)\" ]; then
+                      echo 'First run detected, running migrate dev...';
                       npx prisma migrate dev --name init;
                     fi &&
                     npx prisma migrate deploy &&

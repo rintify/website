@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSessionUser } from '@/lib/api/user'
-import ButtonDiv from './ui/TextButton'
-import { UserIcon } from './Components'
+import ButtonDiv from '../components/TextButton'
+import { UserIcon } from '../components/IconImage'
 
 export const HeaderMargine = () => {
   return <div style={{ height: '4rem' }} />
@@ -15,8 +15,8 @@ export const HeaderMargine = () => {
 
 const menuItems: { menu: string; link: string; hidden?: boolean }[] = [
   { menu: 'Top', link: '/' },
-  { menu: 'Groups', link: '/groups', hidden: false },
-  { menu: 'Craft', link: '/craft', hidden: true },
+  { menu: 'Groups', link: '/groups' },
+  { menu: 'Craft', link: '/craft', hidden: false },
   { menu: 'Storage', link: '/storage' },
   { menu: 'Account', link: '/account' },
 ]

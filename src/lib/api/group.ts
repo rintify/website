@@ -4,12 +4,18 @@ import { useRef, useEffect } from 'react'
 import useSWR, { KeyedMutator } from 'swr'
 import { fetcher, loading } from './user'
 
-export const useGroups = (): {
+export const useGroups = (type?: 'name' | 'recent', query?: string): {
   groups?: Group[]
   groupsLoading?: 'error' | 'validating' | 'loading'
   mutateGroups: KeyedMutator<{ items: Group[] }>
 } => {
-  const key = '/api/groups'
+  let key: string | null = '/api/groups'
+  if (type === 'name' && query) {
+    key = `/api/groups?q=${encodeURIComponent(query)}`
+  } else if (type === 'recent') {
+    key = '/api/groups?recent=true'
+  }
+
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ items: Group[] }>(key, fetcher)
   const groups = data?.items?.map(g => ({ ...g, createdAt: new Date(g.createdAt) }))
   const groupsLoading = loading(key, isLoading, isValidating, error)
@@ -283,3 +289,5 @@ export async function uploadGroupIcon(groupId: string | undefined, file: File | 
   const data = await res.json()
   return { ok: res.ok, error: data.error }
 }
+
+

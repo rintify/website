@@ -3,7 +3,7 @@
 
 import { ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
-import Header from "@/components/Header";
+import Header from "@/app/Header";
 
 export default function Providers({ children }: { children: ReactNode }) {
   

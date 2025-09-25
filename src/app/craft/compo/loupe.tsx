@@ -1,5 +1,5 @@
-import Button from '@/components/ui/Button'
-import ButtonDiv from '@/components/ui/TextButton'
+import Button from '@/components/Button'
+import ButtonDiv from '@/components/TextButton'
 import { LoosIcon, ZoomIcon } from '@/icons'
 import { AnimatePresence, HTMLMotionProps, isDragging, motion } from 'framer-motion'
 import React, { useRef, useState, useCallback, useEffect, CSSProperties } from 'react'

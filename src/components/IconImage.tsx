@@ -60,16 +60,6 @@ export function GroupIcon({groupId, style }: { groupId: string | undefined; styl
         ...style,
       }}
     >
-      <UI
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 'auto',
-          zIndex: 1
-        }}
-      />
       {groupId && <div
         style={{
           position: 'absolute',

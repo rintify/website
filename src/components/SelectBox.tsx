@@ -69,7 +69,7 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
           onChange={value => setQuery(value)}
           onFocus={() => setIsOpen(true)}
           onBlur={() => {
-            setTimeout(() => setIsOpen(false), 50)
+            setTimeout(() => setIsOpen(false), 100)
           }}
         />
       </div>
@@ -85,7 +85,7 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
           backgroundColor: '#fff',
           zIndex: 1000,
           boxShadow: isOpen ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none',
-          transition: 'height 0.1s ease-out, opacity 0.3s ease-out',
+          transition: 'height 0.13s ease-out, opacity 0.13s ease-out',
           opacity: isOpen ? 1 : 0,
         }}
       >
@@ -98,11 +98,13 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
                 padding: '8px',
                 cursor: 'pointer',
                 backgroundColor: 'transparent',
+                minHeight: '1.2em',
+                lineHeight: '1.2',
               }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              {item.label}
+              {isOpen ? item.label : ''}
             </div>
           ))}
           {filteredData.length === 0 && query && <div style={{ padding: '8px', color: '#999' }}>候補なし</div>}

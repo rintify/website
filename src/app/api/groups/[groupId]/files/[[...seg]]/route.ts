@@ -63,8 +63,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   return await _POST({
     form: await req.formData(),
-    dirMaxSize: 20 * 1024 * 1024,
-    fileMaxSize: 20 * 1024 * 1024,
+    dirMaxSize: 5 * 1024 * 1024,
+    fileMaxSize: 5 * 1024 * 1024,
     pathSegments: ['groups', groupId, ...(seg?.map(s => decodeURIComponent(s)) ?? [])],
   })
 }

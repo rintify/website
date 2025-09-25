@@ -3,9 +3,9 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import Box, { Large, ModalBox } from './ui/Box'
-import Button from './ui/Button'
-import TextField from './ui/Textarea'
+import Box, { Large, ModalBox } from '../components/Box'
+import Button from '../components/Button'
+import TextField from '../components/Textarea'
 import { useModal } from '@/hooks/ModalContext'
 import { fetchFile, uploadUserIcon, signUp, signInUser } from '@/lib/api/user'
 import { createGroup, uploadGroupIcon } from '@/lib/api/group'

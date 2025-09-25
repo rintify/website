@@ -1,9 +1,9 @@
 // app/layout.tsx
 import './globals.css'
-import Header from '@/components/Header'
+import Header from '@/app/Header'
 import Providers from './providers'
 import { ModalProvider } from '@/hooks/ModalContext'
-import { LayoutTransition } from '@/components/PageTransition'
+import { LayoutTransition } from '@/app/PageTransition'
 import { ReactElement } from 'react'
 import { DragProvider } from '@/hooks/DragContext'
 
