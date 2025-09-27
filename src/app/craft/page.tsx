@@ -14,7 +14,16 @@ import Joystick from './compo/joystick'
 import { moveCenter, moveOrbit } from './lib/camera'
 import { Loupe, PopButton } from './compo/loupe'
 import { BasisIcon, ObjectIcon } from '@/icons'
-import { CraftAnimate, deleteObject, deselect, lookSelected, putObject, rotateBasis, selectByPointer, setBasis } from './lib/operate'
+import {
+  CraftAnimate,
+  deleteObject,
+  deselect,
+  lookSelected,
+  putObject,
+  rotateBasis,
+  selectByPointer,
+  setBasis,
+} from './lib/operate'
 import ButtonDiv from '@/components/TextButton'
 import { CraftContext, useSampleContext } from './CraftContext'
 
@@ -25,7 +34,11 @@ const ThreeScene = () => {
   const [animations, setAnimations] = useState<CraftAnimate[]>([])
   const animationRef = useRef<number>(0)
   const lastTime = useRef(performance.now())
-  const [, forceUpdate] = useReducer(x => x + 1, 0);
+  const [, forceUpdate] = useReducer(x => x + 1, 0)
+  const [dragging, setDragging] = useState(false)
+  const [pointerActive, setPointerActive] = useState(false)
+  const dragOriginRef = useRef<{ pointer: THREE.Vector2; clientX: number; clientY: number } | null>(null)
+  const DRAG_THRESHOLD_PX = 4
 
   const animate = useCallback(() => {
     const deltaTime = (performance.now() - lastTime.current) / 1000
@@ -44,6 +57,82 @@ const ThreeScene = () => {
     if (animations.length >= 1) animationRef.current = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(animationRef.current)
   }, [animations])
+
+  const createPointerFromClient = useCallback((clientX: number, clientY: number) => {
+    return new THREE.Vector2((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1)
+  }, [])
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!craft.current) return
+      const pointer = createPointerFromClient(e.clientX, e.clientY)
+      dragOriginRef.current = { pointer, clientX: e.clientX, clientY: e.clientY }
+      setPointerActive(true)
+    },
+    [createPointerFromClient]
+  )
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!craft.current) return
+
+      const pointer = createPointerFromClient(e.clientX, e.clientY)
+
+      if (!craft.current.isDragging && dragOriginRef.current) {
+        const { clientX, clientY, pointer: startPointer } = dragOriginRef.current
+        const distPx = Math.hypot(e.clientX - clientX, e.clientY - clientY)
+        if (distPx >= DRAG_THRESHOLD_PX) {
+          const started = craft.current.dragStart(startPointer)
+          if (started) {
+            craft.current.dragMove(pointer)
+          }
+        }
+      } else if (craft.current.isDragging) {
+        craft.current.dragMove(pointer)
+      }
+
+      setDragging(craft.current.isDragging)
+    },
+    [createPointerFromClient, DRAG_THRESHOLD_PX]
+  )
+
+  const handleMouseUp = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!craft.current) return
+      const wasDragging = craft.current.isDragging
+      const currentPointer = createPointerFromClient(clientX, clientY)
+
+      if (wasDragging) {
+        craft.current.dragEnd()
+        setDragging(false)
+      } else if (dragOriginRef.current) {
+        const distance = dragOriginRef.current.pointer.distanceTo(currentPointer)
+        if (distance < 0.01) {
+          selectByPointer(craft.current, currentPointer)
+          forceUpdate()
+        }
+      }
+
+      dragOriginRef.current = null
+      setPointerActive(false)
+    },
+    [createPointerFromClient, forceUpdate]
+  )
+
+  useEffect(() => {
+    if (!dragging && !pointerActive) return
+
+    const handleWindowMouseMove = (e: MouseEvent) => handleMouseMove(e)
+    const handleWindowMouseUp = (e: MouseEvent) => handleMouseUp(e.clientX, e.clientY)
+
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove)
+      window.removeEventListener('mouseup', handleWindowMouseUp)
+    }
+  }, [dragging, pointerActive, handleMouseMove, handleMouseUp])
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -97,38 +186,41 @@ const ThreeScene = () => {
           <div
             ref={mountRef}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            onClick={e => {
-              selectByPointer(
-                craft.current,
-                new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1)
-              )
-              forceUpdate()
+            onMouseDown={e => {
+              handleMouseDown(e)
+            }}
+            onMouseUp={e => {
+              handleMouseUp(e.clientX, e.clientY)
             }}
           />
-          <Joystick
-            onFrame={(dir, deltaTime) => {
-              if (!craft.current || !dir) return
-              const camera = craft.current.camera
-              moveOrbit(
-                camera.position,
-                camera.quaternion,
-                craft.current.center,
-                craft.current.up,
-                dir,
-                0.8,
-                deltaTime
-              )
-              craft.current.render()
-            }}
-          />
-          <Loupe
-            style={{ right: '1.8rem', bottom: '4rem' }}
-            onFrame={(dir, deltaTime) => {
-              if (!craft.current) return
-              moveCenter(craft.current.camera.position, craft.current.center, Math.pow(2, dir), deltaTime)
-              craft.current.render()
-            }}
-          />
+          {
+            <Joystick
+              onFrame={(dir, deltaTime) => {
+                if (!craft.current || !dir) return
+                const camera = craft.current.camera
+                moveOrbit(
+                  camera.position,
+                  camera.quaternion,
+                  craft.current.center,
+                  craft.current.up,
+                  dir,
+                  0.8,
+                  deltaTime
+                )
+                craft.current.render()
+              }}
+            />
+          }
+          {
+            <Loupe
+              style={{ right: '1.8rem', bottom: '4rem' }}
+              onFrame={(dir, deltaTime) => {
+                if (!craft.current) return
+                moveCenter(craft.current.camera.position, craft.current.center, Math.pow(2, dir), deltaTime)
+                craft.current.render()
+              }}
+            />
+          }
           <div
             style={{
               position: 'absolute',
@@ -162,8 +254,8 @@ const ThreeScene = () => {
             <PopButton
               isExist={craft.current && craft.current.selectedPositions.length >= 1}
               onClick={() => {
-                const res = setBasis(craft.current) 
-                if(res) setAnimations(p => [...p, res])
+                const res = setBasis(craft.current)
+                if (res) setAnimations(p => [...p, res])
               }}
             >
               基底を移動

@@ -141,3 +141,18 @@ export function createPyramid(n: number, r: number, h: number): THREE.BufferGeom
 
   return geom
 }
+
+export function createCross(size: number = 0.5, color: number = 0x888888): THREE.Group {
+  const crossGroup = new THREE.Group()
+
+  const vertices = [-size, 0, 0, size, 0, 0, 0, -size, 0, 0, size, 0, 0, 0, -size, 0, 0, size]
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+
+  const material = new THREE.LineBasicMaterial({ color })
+  const cross = new THREE.LineSegments(geometry, material)
+
+  crossGroup.add(cross)
+  return crossGroup
+}
