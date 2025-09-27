@@ -2,19 +2,11 @@ import { Group, Person, TimeBand, Timetable, User, $Enums } from '@prisma/client
 import { useSession } from 'next-auth/react'
 import { useRef, useEffect } from 'react'
 import useSWR, { KeyedMutator } from 'swr'
-import { fetcher, loading } from './user'
+import { fetcher, jsonFetcher, loading } from './user'
 
-export const useGroups = (type?: 'name' | 'recent', query?: string): {
-  groups?: Group[]
-  groupsLoading?: 'error' | 'validating' | 'loading'
-  mutateGroups: KeyedMutator<{ items: Group[] }>
-} => {
-  let key: string | null = '/api/groups'
-  if (type === 'name' && query) {
-    key = `/api/groups?q=${encodeURIComponent(query)}`
-  } else if (type === 'recent') {
-    key = '/api/groups?recent=true'
-  }
+export const useGroups = (params?: { query?: string; joinOnly?: boolean }) => {
+  const queryString = params ? `?params=${encodeURIComponent(JSON.stringify(params))}` : ''
+  const key = `/api/groups${queryString}`
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ items: Group[] }>(key, fetcher)
   const groups = data?.items?.map(g => ({ ...g, createdAt: new Date(g.createdAt) }))
@@ -33,21 +25,24 @@ export async function createGroup(name: string) {
   return { ok: res.ok, error: data?.error, group: res.ok ? (data as Group) : undefined }
 }
 
-export const useGroup = (
-  groupId?: string
-): {
-  group?: Group
-  groupLoading?: 'error' | 'validating' | 'loading'
-  mutateGroup: KeyedMutator<Group>
-} => {
+export const useGroup = (groupId?: string) => {
   const key = groupId && `/api/groups/${groupId}`
-  const { data, error, isLoading, isValidating, mutate } = useSWR<Group>(key, fetcher)
+  const { data, error, isLoading, isValidating, mutate } = useSWR<Group & { owner: User }>(key, fetcher)
   const group = data && { ...data, createdAt: new Date(data.createdAt) }
   const groupLoading = loading(groupId, isLoading, isValidating, error)
   return { group, groupLoading, mutateGroup: mutate }
 }
 
-export async function updateGroup(groupId: string, params: { name?: string; comment?: string; visibility?: $Enums.Permission; editability?: $Enums.Permission }) {
+export async function updateGroup(
+  groupId: string,
+  params: {
+    name?: string
+    comment?: string
+    visibility?: $Enums.Permission
+    editability?: $Enums.Permission
+    searchable?: $Enums.Permission
+  }
+) {
   const res = await fetch(`/api/groups/${groupId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -195,20 +190,25 @@ export function useGroupFileList(
   groupFileListLoading?: 'error' | 'validating' | 'loading'
   mutateGroupFileList: KeyedMutator<{ name: string; size: number }[]>
 } {
-  const encodedPath = path ? path.split('/').map((s: string) => encodeURIComponent(s)).join('/') : ''
+  const encodedPath = path
+    ? path
+        .split('/')
+        .map((s: string) => encodeURIComponent(s))
+        .join('/')
+    : ''
   const key = groupId ? `/api/groups/${groupId}/files/${encodedPath || ''}` : null
-  
+
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ name: string; size: number }[]>(
-    key, 
+    key,
     async (url: string) => {
       const res = await fetch(url)
-      
+
       if (!res.ok) {
         throw new Error(`${res.statusText}`)
       }
-      
+
       const text = await res.text()
-      
+
       try {
         const json = JSON.parse(text)
 
@@ -220,7 +220,6 @@ export function useGroupFileList(
   )
   const groupFileListLoading = loading(groupId, isLoading, isValidating, error)
 
-  
   return {
     files: data ?? [],
     groupFileListLoading,
@@ -236,7 +235,12 @@ export function useGroupFileContent(
   groupFileContentLoading?: 'error' | 'validating' | 'loading'
   mutateGroupFileContent: KeyedMutator<string>
 } {
-  const encodedPath = path ? path.split('/').map((s: string) => encodeURIComponent(s)).join('/') : ''
+  const encodedPath = path
+    ? path
+        .split('/')
+        .map((s: string) => encodeURIComponent(s))
+        .join('/')
+    : ''
   const key = groupId && path && `/api/groups/${groupId}/files/${encodedPath}`
   const { data, error, isLoading, isValidating, mutate } = useSWR<string>(key, async (url: string) => {
     const res = await fetch(url)
@@ -254,7 +258,10 @@ export function useGroupFileContent(
 export async function uploadGroupFile(groupId: string, path: string, file: File) {
   const formData = new FormData()
   formData.append('file', file)
-  const encodedPath = path.split('/').map(s => encodeURIComponent(s)).join('/')
+  const encodedPath = path
+    .split('/')
+    .map(s => encodeURIComponent(s))
+    .join('/')
 
   const res = await fetch(`/api/groups/${groupId}/files/${encodedPath}`, {
     method: 'POST',
@@ -266,7 +273,10 @@ export async function uploadGroupFile(groupId: string, path: string, file: File)
 }
 
 export async function deleteGroupFile(groupId: string, path: string) {
-  const encodedPath = path.split('/').map(s => encodeURIComponent(s)).join('/')
+  const encodedPath = path
+    .split('/')
+    .map(s => encodeURIComponent(s))
+    .join('/')
 
   const res = await fetch(`/api/groups/${groupId}/files/${encodedPath}`, {
     method: 'DELETE',
@@ -277,11 +287,11 @@ export async function deleteGroupFile(groupId: string, path: string) {
 }
 
 export async function uploadGroupIcon(groupId: string | undefined, file: File | undefined) {
-  if(!groupId || !file) return { ok: false, error: "アップロードに失敗しました" }
+  if (!groupId || !file) return { ok: false, error: 'アップロードに失敗しました' }
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await fetch(`/api/groups/${groupId}/icon`, { 
+  const res = await fetch(`/api/groups/${groupId}/icon`, {
     method: 'POST',
     body: formData,
   })
@@ -289,5 +299,3 @@ export async function uploadGroupIcon(groupId: string | undefined, file: File | 
   const data = await res.json()
   return { ok: res.ok, error: data.error }
 }
-
-

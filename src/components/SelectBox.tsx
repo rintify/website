@@ -1,36 +1,79 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, ReactNode, ReactElement, CSSProperties } from 'react'
 import TextField from './Textarea'
+import { useModal } from '@/hooks/ModalContext'
+import ButtonDiv from './TextButton'
+import { ModalBox } from './Box'
+import { title } from 'process'
 
 interface SelectBoxProps<T> {
   data: { id: T; label: string }[]
   maxItems?: number
   defaultId?: T
   onSelect: (id: T) => void
+  itemRenderer?: (id: T, label: string) => ReactNode
+  style?: CSSProperties
+  title?: string
 }
 
-export function SelectBox<T extends string | number>({ data, maxItems = 20, defaultId, onSelect }: SelectBoxProps<T>) {
-  const [query, setQuery] = useState(data.find(item => item.id === defaultId)?.label ?? '')
+function useSelectLogic<T extends string | number>(props: SelectBoxProps<T>) {
+  const [query, setQuery] = useState(props.data.find(item => item.id === props.defaultId)?.label ?? '')
   const [isComposing, setIsComposing] = useState(false)
+
+  useEffect(() => {
+    const defaultItem = props.data.find(item => item.id === props.defaultId)
+    if (defaultItem) {
+      setQuery(defaultItem.label)
+    } else if (props.defaultId === undefined) {
+      setQuery('')
+    }
+  }, [props.defaultId, props.data])
+
+  let noQueData = props.data.filter(item => item.label !== query)
+  let filteredData = noQueData.filter(item => item.label.toLowerCase().includes(query.toLowerCase()))
+  if (filteredData.length === 0) filteredData = noQueData
+  filteredData = filteredData.slice(0, props.maxItems || 20)
+
+  const handleSelectBase = (item: { id: T; label: string }) => {
+    props.onSelect(item.id)
+    setQuery(item.label)
+  }
+
+  const handleKeyDownBase = (e: React.KeyboardEvent, extraAction?: () => void) => {
+    if (e.key === 'Enter' && !isComposing && filteredData.length > 0) {
+      e.preventDefault()
+      props.onSelect(filteredData[0].id)
+      setQuery(filteredData[0].label)
+      extraAction?.()
+    }
+  }
+
+  return {
+    query,
+    setQuery,
+    isComposing,
+    setIsComposing,
+    filteredData,
+    handleSelect: handleSelectBase,
+    handleKeyDown: handleKeyDownBase,
+  }
+}
+
+export function SelectBox<T extends string | number>({
+  data,
+  maxItems = 20,
+  defaultId,
+  onSelect,
+  itemRenderer = (_, label) => label,
+  style,
+}: SelectBoxProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [dropdownHeight, setDropdownHeight] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const defaultItem = data.find(item => item.id === defaultId)
-    if (defaultItem) {
-      setQuery(defaultItem.label)
-    } else if (defaultId === undefined) {
-      setQuery('')
-    }
-  }, [defaultId, data])
-
-  let noQueData = data.filter(item => item.label !== query)
-  let filteredData = noQueData.filter(item => item.label.toLowerCase().includes(query.toLowerCase()))
-  if (filteredData.length === 0) filteredData = noQueData
-  filteredData = filteredData.slice(0, maxItems)
+  const logic = useSelectLogic({ data, maxItems, defaultId, onSelect, itemRenderer })
 
   useEffect(() => {
     if (dropdownRef.current) {
@@ -41,32 +84,24 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
         setDropdownHeight(0)
       }
     }
-  }, [isOpen, filteredData])
+  }, [isOpen, logic.filteredData])
 
   const handleSelect = (item: { id: T; label: string }) => {
-    onSelect(item.id)
-    setQuery(item.label)
+    logic.handleSelect(item)
     setIsOpen(false)
   }
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', ...style }}>
       <div
-        onKeyDown={e => {
-          if (e.key === 'Enter' && !isComposing && filteredData.length > 0) {
-            e.preventDefault()
-            onSelect(filteredData[0].id)
-            setQuery(filteredData[0].label)
-            setIsOpen(false)
-          }
-        }}
-        onCompositionStart={() => setIsComposing(true)}
-        onCompositionEnd={() => setIsComposing(false)}
+        onKeyDown={e => logic.handleKeyDown(e, () => setIsOpen(false))}
+        onCompositionStart={() => logic.setIsComposing(true)}
+        onCompositionEnd={() => logic.setIsComposing(false)}
       >
         <TextField
           single
-          value={query}
-          onChange={value => setQuery(value)}
+          value={logic.query}
+          onChange={logic.setQuery}
           onFocus={() => setIsOpen(true)}
           onBlur={() => {
             setTimeout(() => setIsOpen(false), 100)
@@ -90,7 +125,7 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
         }}
       >
         <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
-          {filteredData.map(item => (
+          {logic.filteredData.map(item => (
             <div
               key={item.id}
               onClick={() => handleSelect(item)}
@@ -99,17 +134,77 @@ export function SelectBox<T extends string | number>({ data, maxItems = 20, defa
                 cursor: 'pointer',
                 backgroundColor: 'transparent',
                 minHeight: '1.2em',
-                lineHeight: '1.2',
               }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
-              {isOpen ? item.label : ''}
+              {isOpen ? itemRenderer(item.id, item.label) : ''}
             </div>
           ))}
-          {filteredData.length === 0 && query && <div style={{ padding: '8px', color: '#999' }}>候補なし</div>}
+          {logic.filteredData.length === 0 && logic.query && (
+            <div style={{ padding: '8px', color: '#999' }}>候補なし</div>
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+export function SelectText<T extends string | number>(props: SelectBoxProps<T> & { defaultText?: string; modalStyle?: CSSProperties }) {
+  const { pushModal } = useModal()
+
+  return (
+    <ButtonDiv style={props.style} onClick={() => pushModal('select', () => <SelectModal {...props} style={props.modalStyle} />)}>
+      {props.data.find(item => item.id === props.defaultId)?.label ?? props.defaultText ?? ''}
+    </ButtonDiv>
+  )
+}
+
+export function SelectModal<T extends string | number>(props: SelectBoxProps<T>): ReactElement {
+  const { popModal } = useModal()
+
+  const logic = useSelectLogic(props)
+
+  const handleSelect = (item: { id: T; label: string }) => {
+    logic.handleSelect(item)
+    popModal('select')
+  }
+
+  return (
+    <ModalBox
+      style={props.style}
+      title={props.title ?? '選択'}
+      actions={[]}
+    >
+      <div
+        style={{width: '100%'}} 
+        onKeyDown={e => logic.handleKeyDown(e, () => popModal('select'))}
+        onCompositionStart={() => logic.setIsComposing(true)}
+        onCompositionEnd={() => logic.setIsComposing(false)}
+      >
+        <TextField single value={logic.query} onChange={logic.setQuery} />
+      </div>
+      <div style={{ overflowY: 'auto',  width: '100%', maxHeight: '80%', minHeight: '10rem' }}>
+        {logic.filteredData.map(item => (
+          <div
+            key={item.id}
+            onClick={() => handleSelect(item)}
+            style={{
+              padding: '8px',
+              cursor: 'pointer',
+              backgroundColor: 'transparent',
+              minHeight: '1.2em',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            {props.itemRenderer ? props.itemRenderer(item.id, item.label) : item.label}
+          </div>
+        ))}
+        {logic.filteredData.length === 0 && logic.query && (
+          <div style={{ padding: '8px', color: '#999' }}>候補なし</div>
+        )}
+      </div>
+    </ModalBox>
   )
 }

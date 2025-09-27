@@ -15,12 +15,16 @@ import ButtonDiv from '@/components/TextButton'
 import { IconEditModal } from '@/components/IconEditModal'
 import { SelectBox } from '@/components/SelectBox'
 import { $Enums } from '@prisma/client'
+import { useRouter } from 'next/navigation'
+import Button from '@/components/Button'
 
 export default function HomePage({ params }: NextParams) {
   const { pushModal, popModal } = useModal()
   const { groupId } = use(params)
 
   const { group, groupLoading, mutateGroup } = useGroup(groupId)
+
+  const router = useRouter()
 
   const handleEditButton = () => {
     pushModal('editGroup', () => <EditModal />)
@@ -35,6 +39,7 @@ export default function HomePage({ params }: NextParams) {
     const [comment, setComment] = useState('')
     const [visibility, setVisibility] = useState<$Enums.Permission>('PRIVATE')
     const [editability, setEditability] = useState<$Enums.Permission>('PRIVATE')
+    const [searchable, setSearchable] = useState<$Enums.Permission>('PRIVATE')
 
     useEffect(() => {
       if (!group) return
@@ -42,6 +47,7 @@ export default function HomePage({ params }: NextParams) {
       setComment(group.comment)
       setVisibility(group.visibility)
       setEditability(group.editability)
+      setSearchable(group.searchable ?? 'PRIVATE')
     }, [group])
 
     return (
@@ -49,7 +55,7 @@ export default function HomePage({ params }: NextParams) {
         title='グループ編集'
         actions={async () => {
           if (!group) return 'グループが見つかりません'
-          const res = await updateGroup(group.id, { name: nickName, comment, visibility, editability })
+          const res = await updateGroup(group.id, { name: nickName, comment, visibility, editability, searchable })
           if (res.ok) {
             mutateGroup()
             popModal('editGroup')
@@ -83,6 +89,17 @@ export default function HomePage({ params }: NextParams) {
               onSelect={item => setEditability(item)}
             />
           </Box>
+        </Box>
+        <Box>
+          検索権限
+          <SelectBox
+            defaultId={searchable}
+            data={[
+              { id: 'PUBLIC', label: 'すべての人' },
+              { id: 'PRIVATE', label: 'メンバーのみ' },
+            ]}
+            onSelect={item => setSearchable(item)}
+          />
         </Box>
         コメント
         <TextField value={comment} onChange={e => setComment(e)} />
@@ -121,13 +138,21 @@ export default function HomePage({ params }: NextParams) {
       </Box>
 
       <ProfileTable style={{ marginBottom: '2rem' }}>
+        オーナー
+        {group?.owner ? (`${group.owner.nickName}` || group.owner.name) : 'なし'}
         作成日
         {group ? formatJapaneseDate(group.createdAt) : 'なし'}
+        検索
+        {group?.searchable === 'PRIVATE' ? 'メンバーのみ' : group?.searchable === 'PUBLIC' ? 'すべての人' : ''}
         閲覧
         {group?.visibility === 'PRIVATE' ? 'メンバーのみ' : group?.visibility === 'PUBLIC' ? 'すべての人' : ''}
         編集
         {group?.editability === 'PRIVATE' ? 'メンバーのみ' : group?.editability === 'PUBLIC' ? 'すべての人' : ''}
       </ProfileTable>
+
+      <Button onClick={() => router.push(`/storage?groupId=${groupId}`)} style={{ marginTop: '2rem', alignSelf: 'center'}}>
+        ストレージを見る
+      </Button>
 
       <MarkdownBox content={group?.comment ?? ''} />
 

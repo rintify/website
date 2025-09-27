@@ -30,6 +30,7 @@ model Group {
   createdAt     DateTime @default(now())
   visibility Permission @default(PRIVATE)
   editability Permission @default(PRIVATE)
+  searchable Permission @default(PRIVATE)
 
   ownerId String
   owner   User     @relation(fields: [ownerId], references: [id])

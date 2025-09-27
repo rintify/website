@@ -78,24 +78,26 @@ export const ModalBox: React.FC<{
         {error ?? ''}
       </Box>
       {children}
-      <Box row style={{ width: '100%', marginTop: '1rem', justifyContent: 'flex-end', flexDirection: 'row' }}>
-        {actions.map((a, i) => {
-          return (
-            <Button
-              key={i}
-              onClick={async () => {
-                const res = await a.on(ctx)
-                if (res) {
-                  setError(res)
-                  ctx.shakeModal()
-                }
-              }}
-            >
-              {a.text}
-            </Button>
-          )
-        })}
-      </Box>
+      {actions.length === 0 ? undefined : (
+        <Box row style={{ width: '100%', marginTop: '1rem', justifyContent: 'flex-end', flexDirection: 'row' }}>
+          {actions.map((a, i) => {
+            return (
+              <Button
+                key={i}
+                onClick={async () => {
+                  const res = await a.on(ctx)
+                  if (res) {
+                    setError(res)
+                    ctx.shakeModal()
+                  }
+                }}
+              >
+                {a.text}
+              </Button>
+            )
+          })}
+        </Box>
+      )}
     </Box>
   )
 }

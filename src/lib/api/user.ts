@@ -25,7 +25,20 @@ export const fetcher = async (url: string) => {
   return res.json()
 }
 
-export function loading(id: string | undefined, isLoading: boolean, isValidating: boolean, error: any) {
+export const jsonFetcher = async (url: string, body?: any) => {
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) {
+    throw new Error(`${res.statusText}`)
+  }
+  return res.json()
+}
+
+export type LoadingStatus = 'error' | 'validating' | 'loading' | undefined
+export function loading(id: string | undefined, isLoading: boolean, isValidating: boolean, error: any): LoadingStatus {
   const preId = useRef(id)
 
   const loading = !!error

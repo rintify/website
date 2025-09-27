@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, $Enums } from '@prisma/client'
 import { requireAuth, parseRequest, checkTextResponse, NAME_REGEX } from '@/lib/nextauth-server'
-import { Object, String, Union, Undefined } from 'runtypes'
+import { Object, String, Union, Undefined, Boolean } from 'runtypes'
 
 const prisma = new PrismaClient()
 
@@ -10,6 +10,7 @@ const PatchBody = Object({
   comment: Union(String, Undefined),
   visibility: Union(String, Undefined),
   editability: Union(String, Undefined),
+  searchable: Union(String, Undefined),
 })
 
 type NextParams = { params: Promise<{ groupId: string }> }
@@ -27,6 +28,15 @@ export async function GET(_req: NextRequest, { params }: NextParams) {
         createdAt: true,
         visibility: true,
         editability: true,
+        searchable: true,
+        ownerId: true,
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            nickName: true,
+          },
+        },
       },
     })
     return NextResponse.json(g, { status: 200 })
@@ -66,8 +76,9 @@ export async function PATCH(req: NextRequest, { params }: NextParams) {
         ...(body.comment !== undefined ? { comment: body.comment } : {}),
         ...(body.visibility !== undefined ? { visibility: body.visibility as $Enums.Permission } : {}),
         ...(body.editability !== undefined ? { editability: body.editability as $Enums.Permission } : {}),
+        ...(body.searchable !== undefined ? { searchable: body.searchable as $Enums.Permission } : {}),
       },
-      select: { id: true, name: true, comment: true, visibility: true, editability: true },
+      select: { id: true, name: true, comment: true, visibility: true, editability: true, searchable: true },
     })
     return NextResponse.json(updated, { status: 200 })
   } catch (err) {

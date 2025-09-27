@@ -21,7 +21,6 @@ export async function GET(req: NextRequest, { params }: NextParams) {
   try {
     const timetables = await prisma.timetable.findMany({
       where: { groupId },
-      select: { id: true, name: true, comment: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     })
     return NextResponse.json({ items: timetables }, { status: 200 })
@@ -52,7 +51,6 @@ export async function POST(req: NextRequest, { params }: NextParams) {
   try {
     const created = await prisma.timetable.create({
       data: { groupId, name: body.name, comment: '' },
-      select: { id: true, name: true, comment: true, createdAt: true },
     })
     return NextResponse.json(created, { status: 201 })
   } catch (err) {

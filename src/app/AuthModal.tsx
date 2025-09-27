@@ -39,10 +39,13 @@ export default function AuthModal() {
     const signInResult = await signInUser(name, password)
     if (!signInResult.ok) return signInResult.error
 
-    const icon = await fetchFile('/default_icon.png')
+    const randomIcon = Math.floor(Math.random() * 10)
+    const icon = await fetchFile(`/default_icons/${randomIcon}.png`)
 
-    createGroup(signUpResult.user?.name ?? 'グループ').then(res => uploadGroupIcon(res.group?.id, icon))
-    await uploadUserIcon(signUpResult.user?.id, icon)
+    await Promise.all([
+      createGroup(signUpResult.user?.name ?? 'グループ').then(res => uploadGroupIcon(res.group?.id, icon)),
+      uploadUserIcon(signUpResult.user?.id, icon)
+    ])
 
     popModal('auth')
     window.location.reload()

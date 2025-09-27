@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient, $Enums } from '@prisma/client'
+import { PrismaClient, $Enums, Prisma } from '@prisma/client'
 import { requireAuth, parseRequest, checkTextResponse, checkLimitResponse, NAME_REGEX } from '@/lib/nextauth-server'
 import { Object, String, Union, Undefined } from 'runtypes'
 
@@ -10,58 +10,43 @@ const CreateBody = Object({
 })
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q')
-  const recent = searchParams.get('recent')
+  const url = req.nextUrl
+  const paramsStr = url.searchParams.get('params')
+  const params = paramsStr ? JSON.parse(paramsStr) : {}
+  const query = params.query?.trim()
+  const joinOnly = params.joinOnly === true
+  const user = await requireAuth()
 
-  if (q && q.trim().length > 0) {
+  console.log(query, joinOnly, !!user)
 
-    try {
-      const groups = await prisma.group.findMany({
-        where: {
-          name: { contains: q.trim() },
-          visibility: 'PUBLIC',
-        },
-        select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
-        orderBy: { createdAt: 'desc' },
-        take: 30,
-      })
-      return NextResponse.json({ items: groups }, { status: 200 })
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: '検索に失敗しました' }, { status: 500 })
+  try {
+    const where: Prisma.GroupWhereInput = {}
+
+    if (user) {
+      where.OR = [
+        { searchable: $Enums.Permission.PUBLIC },
+        { ownerId: user.id }
+      ]
+    } else {
+      where.searchable = $Enums.Permission.PUBLIC
     }
-  } else if (recent === 'true') {
-    try {
-      const groups = await prisma.group.findMany({
-        where: {
-          visibility: 'PUBLIC',
-        },
-        select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
-        orderBy: { createdAt: 'desc' },
-        take: 30,
-      })
-      return NextResponse.json({ items: groups }, { status: 200 })
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: '取得に失敗しました' }, { status: 500 })
-    }
-  } else {
 
-    const user = await requireAuth()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    try {
-      const groups = await prisma.group.findMany({
-        where: { ownerId: user.id },
-        select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
-        orderBy: { createdAt: 'asc' },
-      })
-      return NextResponse.json({ items: groups }, { status: 200 })
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
+    if (query) {
+      where.name = { contains: query }
     }
+
+    if (joinOnly && user) {
+      where.ownerId = user.id
+    }
+
+    const groups = await prisma.group.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    })
+    return NextResponse.json({ items: groups }, { status: 200 })
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 }
 
@@ -75,7 +60,6 @@ export async function POST(req: NextRequest) {
   let err = checkTextResponse('グループ名', body.name, 1, 20, NAME_REGEX, true)
   if (err) return err
 
-
   err = await checkLimitResponse('グループ', 'group', 5, 24 * 21, { ownerId: user.id })
   if (err) return err
 
@@ -85,7 +69,6 @@ export async function POST(req: NextRequest) {
         ownerId: user.id,
         name: body.name,
       },
-      select: { id: true, name: true, comment: true, createdAt: true, visibility: true, editability: true },
     })
     return NextResponse.json(created, { status: 201 })
   } catch (err) {

@@ -42,10 +42,13 @@ export async function POST(req: NextRequest, { params }: NextParams) {
     },
   })
 
+
   if (!group || group.visibility !== Permission.PUBLIC || group.editability !== Permission.PUBLIC) {
     const user = await requireAuth()
     if (!user || !group || group.ownerId != user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  console.log('Uploading icon for group', groupId)
 
   return await _POST({
     form: await req.formData(),

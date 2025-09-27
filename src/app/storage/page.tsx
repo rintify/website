@@ -12,16 +12,21 @@ import { DragDiv, DropDiv, useDragContext } from '@/hooks/DragContext'
 import { useModal } from '@/hooks/ModalContext'
 import { FileIcon, UpIcon } from '@/icons'
 import { useSessionUser } from '@/lib/api/user'
-import { useGroups, useGroupFileList, uploadGroupFile, deleteGroupFile } from '@/lib/api/group'
-import { useRouter } from 'next/navigation'
+import { useGroups, useGroup, useGroupFileList, uploadGroupFile, deleteGroupFile } from '@/lib/api/group'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, Fragment } from 'react'
+import { SelectText } from '@/components/SelectBox'
+import { Group } from '@prisma/client'
 
 export default function FileViewer() {
   const { session, sessionLoading } = useSessionUser()
-  const { groups, groupsLoading } = useGroups()
-  const firstGroup = groups?.[0]
+  const searchParams = useSearchParams()
+  const groupId = searchParams.get('groupId')
+  const { group: specifiedGroup, groupLoading: specifiedGroupLoading } = useGroup(groupId || undefined)
+  const { groups: ownedGroups, groupsLoading: ownedGroupsLoading } = useGroups({ joinOnly: true })
+  const [selectedGroup, setSelectedGroup] = useState<Group | undefined>()
   const { files, groupFileListLoading, mutateGroupFileList } = useGroupFileList(
-    !groupsLoading && firstGroup ? firstGroup.id : undefined
+    !ownedGroupsLoading && selectedGroup ? selectedGroup.id : undefined
   )
   const router = useRouter()
 
@@ -30,18 +35,32 @@ export default function FileViewer() {
   const { isDragging } = useDragContext()
   const { push } = useRouter()
 
+  const allGroups = [specifiedGroup, ...(ownedGroups || [])].filter((g): g is Group => g !== undefined).filter((g, i, arr) => arr.findIndex(gg => gg.id === g.id) === i)
+
+  useEffect(() => {
+    if (allGroups.length > 0 && !selectedGroup) {
+      if (specifiedGroup) {
+        setSelectedGroup(specifiedGroup)
+      } else {
+        const savedId = localStorage.getItem('selectedGroupId')
+        const savedGroup = allGroups.find((g: Group) => g.id === savedId)
+        setSelectedGroup(savedGroup ?? allGroups[0])
+      }
+    }
+  }, [allGroups, selectedGroup, specifiedGroup])
+
   const onChange = async (files: File[]) => {
     if (!session) {
       pushModal('auth', () => <AuthModal />)
       return
     }
-    if (!firstGroup) {
+    if (!selectedGroup) {
       alert('所属するグループがありません')
       return
     }
     if (!files) return
     for (const file of files) {
-      const res = await uploadGroupFile(firstGroup.id, file.name, file)
+      const res = await uploadGroupFile(selectedGroup.id, file.name, file)
       if (!res.ok) alert(res.error)
     }
     mutateGroupFileList()
@@ -57,13 +76,27 @@ export default function FileViewer() {
     >
       <HeaderMargine />
       <div style={{ alignSelf: 'flex-start', marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
-        <ButtonDiv onClick={() => router.push(`/groups/${firstGroup?.id}`)}>
-          <GroupIcon groupId={firstGroup?.id} style={{ width: '4rem', height: '4rem' }} />
+        <ButtonDiv onClick={() => router.push(`/groups/${selectedGroup?.id}`)}>
+          <GroupIcon groupId={selectedGroup?.id} style={{ width: '4rem', height: '4rem' }} />
         </ButtonDiv>
         <div>
-          <span style={{ display: 'flex', alignItems: 'baseline' }}>
-            <Medium>{firstGroup?.name ?? 'グループなし'}</Medium>のストレージ
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', userSelect: 'none' }}>
+            <SelectText
+              style={{
+                margin: '0 0.5rem 0 0.2rem',
+                fontSize: '1.2rem',
+              }}
+              defaultText='グループなし'
+              data={allGroups.map(g => ({ id: g.id, label: g.name }))}
+              defaultId={selectedGroup?.id}
+              onSelect={(id: string) => {
+                const group = allGroups.find(g => g.id === id)
+                setSelectedGroup(group)
+                localStorage.setItem('selectedGroupId', id)
+              }}
+            />
+            のストレージ
+          </div>
           <LoadingBar
             style={{ marginTop: '0.5rem', width: '15rem' }}
             progress={
@@ -126,8 +159,8 @@ export default function FileViewer() {
                         {
                           on: async ctx => {
                             ctx.popModal(file.name)
-                            if (firstGroup) {
-                              await deleteGroupFile(firstGroup.id, file.name)
+                            if (selectedGroup) {
+                              await deleteGroupFile(selectedGroup.id, file.name)
                               mutateGroupFileList()
                             }
                           },
@@ -150,8 +183,8 @@ export default function FileViewer() {
                         <ButtonDiv
                           line
                           onClick={() => {
-                            if (firstGroup) {
-                              push(`/api/groups/${firstGroup.id}/files/${encodeURIComponent(file.name)}`)
+                            if (selectedGroup) {
+                              push(`/api/groups/${selectedGroup.id}/files/${encodeURIComponent(file.name)}`)
                             }
                           }}
                         >
@@ -163,8 +196,8 @@ export default function FileViewer() {
                 }
                 onDrop={data => {
                   if (data === 'delete') {
-                    if (firstGroup) {
-                      deleteGroupFile(firstGroup.id, file.name).then(() => mutateGroupFileList())
+                    if (selectedGroup) {
+                      deleteGroupFile(selectedGroup.id, file.name).then(() => mutateGroupFileList())
                       return true
                     }
                   }

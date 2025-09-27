@@ -15,9 +15,9 @@ export const HeaderMargine = () => {
 
 const menuItems: { menu: string; link: string; hidden?: boolean }[] = [
   { menu: 'Top', link: '/' },
-  { menu: 'Groups', link: '/groups' },
   { menu: 'Craft', link: '/craft', hidden: false },
   { menu: 'Storage', link: '/storage' },
+  { menu: 'Groups', link: '/groups' },
   { menu: 'Account', link: '/account' },
 ]
 
